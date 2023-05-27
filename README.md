@@ -1,14 +1,12 @@
 # go-infrastructure
-simpler way to setup your infrastructure for golang such as database, encryption, jwt and others
+A simpler way to setup your infrastructure for your golang project!
 
-## How To Access Every Mini Module?
-you only need access it using "head" but there some preparation you need to be done, here the step :
+## How To Access Every Infrastructure?
+you can access every provided infrastructure by calling its function directly or use head function to access all infrastructure in singe function call, here step-by-step to use head function :
+* Make configuration YAML (follow the prefered vonfiguration format below).
+* Call head function on your project it will require configuration YAML file path.
 
-* Make configuration YAML you can see format below
-* Call head function set parameter with your configuration directory path
-* You good to go! enjoy the simplecity of go :)
-
-## Configuration YAML Example
+## Prefered Configuration Format
 ```
 application :
   port : ":8000"
@@ -37,12 +35,12 @@ smtp :
 ```
 
 ## How About Unit Testing ?
-i already made some mock contract on every mini module but you need to use Testify package to make it work, just in case you doesnt add Testify module you can run command bellow :
+i made mock contract on every infrastructure except databases but you need to use Testify package to make it work, just in case you does'nt add Testify package you can run command provided below :
 
 ```
 $ go get https://github.com/stretchr/testify
 ```
-if you have Testify on your project it good to go! see code example to mock testing your project :
+if you have Testify on your project it's good to go! see code example below to conduct mock testing on your project :
 
 ```
 func TestTest(t *testing.T) {
