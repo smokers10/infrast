@@ -1,6 +1,14 @@
 # go-infrastructure
 A simpler way to setup infrastructure for your golang project!
 
+## Provided Functionality
+* Database (PostgreSQL & mongoDB)
+* Encryption (Bcrypt)
+* Json Web Token
+* Identifier (Google Identifier)
+* SMTP
+* Mock Contract On Every Infra Except Databases
+
 ## How To Access Every Infrastructure?
 you can access every provided infrastructure by calling its function directly or use head function to access all infrastructure in singe function call, here step-by-step to use head function :
 * Make configuration YAML (follow the prefered vonfiguration format below).
@@ -35,12 +43,12 @@ smtp :
 ```
 
 ## How About Unit Testing ?
-i made mock contract on every infrastructure except databases but you need to use Testify package to make it work, just in case you does'nt add Testify package you can run command provided below :
+i made mock contract on every infrastructure except databases but you need to use Testify package to make it work, just in case you does'nt have Testify package on your project please run command:
 
 ```
-$ go get https://github.com/stretchr/testify
+$ go get github.com/stretchr/testify
 ```
-if you have Testify on your project it's good to go! see code example below to conduct mock testing on your project :
+if you already have Testify on your project it's good to go! see code example below:
 
 ```
 func TestTest(t *testing.T) {
