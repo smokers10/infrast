@@ -1,2 +1,4 @@
 docker-for-test/mongodata
 docker-for-test/pgdata
+mailer/config.yaml
+head/config.yaml

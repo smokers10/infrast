@@ -14,23 +14,6 @@ func TestJsonWebToken(t *testing.T) {
 	}
 	// define mock config
 	c := config.Configuration{
-		PostgreSQL: config.DatabasePostgreSQL{
-			Host:                  "localhost",
-			Port:                  5432,
-			User:                  "testuser",
-			Password:              "testpass",
-			DBName:                "testdb",
-			MaxOpenConnections:    10,
-			MaxIdleConnections:    2,
-			ConnectionMaxLifeTime: 10,
-		},
-		MongoDB: config.DatabaseMongoDB{
-			URI:                "mongodb://testuser:testpass@localhost:27017/?authMechanism=SCRAM-SHA-1",
-			MaxPool:            10,
-			MinPool:            2,
-			MaxIdleConnections: 1,
-			DBName:             "testing",
-		},
 		Application: config.Application{
 			Port:   ":8000",
 			Secret: "abcdefg",
