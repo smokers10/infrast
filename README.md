@@ -1,5 +1,5 @@
 # go-infrastructure
-A simpler way to setup your infrastructure for your golang project!
+A simpler way to setup infrastructure for your golang project!
 
 ## How To Access Every Infrastructure?
 you can access every provided infrastructure by calling its function directly or use head function to access all infrastructure in singe function call, here step-by-step to use head function :
