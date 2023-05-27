@@ -3,13 +3,13 @@ package config
 type Configuration struct {
 	PostgreSQL  DatabasePostgreSQL `yaml:"postgres"`
 	MongoDB     DatabaseMongoDB    `yaml:"mongodb"`
-	Application Application        `yaml:"aplication"`
+	Application Application        `yaml:"application"`
 	SMTP        SMTP               `yaml:"smtp"`
 }
 
 type Application struct {
 	Port   string `yaml:"port"`
-	Secret string `yaml:"scret"`
+	Secret string `yaml:"secret"`
 }
 
 type DatabasePostgreSQL struct {
