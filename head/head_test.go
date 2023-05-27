@@ -103,3 +103,12 @@ func TestJsonWebToken(t *testing.T) {
 		assert.Equal(t, 24, int(p["age"].(float64)))
 	})
 }
+
+func TestMailer(t *testing.T) {
+	h := callHead()
+
+	smtp := h.Mailer
+
+	err := smtp.Send([]string{"lpiexecutive@gmail.com"}, "good morning!", "hey good morning budy!")
+	assert.Empty(t, err)
+}
