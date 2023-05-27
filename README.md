@@ -35,3 +35,29 @@ smtp :
   port : 5432
   sender : "sender"
 ```
+
+## How About Unit Testing ?
+i already made some mock contract on every mini module but you need to use Testify package to make it work, just in case you doesnt add Testify module you can run command bellow :
+
+```
+$ go get https://github.com/stretchr/testify
+```
+if you have Testify on your project it good to go! see code example to mock testing your project :
+
+```
+func TestTest(t *testing.T) {
+	mailerMock := contract.MailerContractMock{Mock: mock.Mock{}}
+	h := head.ModuleHeader{
+		Mailer: &mailerMock,
+	}
+
+	t.Run("Failed", func(t *testing.T) {
+		mailerMock.Mock.On("Send", []string{mock.Anything}, mock.Anything, mock.Anything).Return(errors.New("error send email")).Once()
+		_, err := Register(&h, mock.Anything)
+
+		assert.NotEmpty(t, err)
+		t.Logf("error send email : %v\n", err.Error())
+	})
+}
+
+```
