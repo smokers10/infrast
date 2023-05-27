@@ -10,7 +10,7 @@ import (
 	"github.com/smokers10/go-infrastructure/mailer"
 )
 
-type head struct {
+type ModuleHeader struct {
 	DB         contract.DatabaseContract
 	Encryption contract.EncryptionContract
 	Identfier  contract.IdentfierContract
@@ -18,13 +18,13 @@ type head struct {
 	Mailer     contract.MailerContract
 }
 
-func Head(path string) (*head, error) {
+func Head(path string) (*ModuleHeader, error) {
 	config, err := config.Reader("config.yaml")
 	if err != nil {
 		return nil, err
 	}
 
-	result := head{
+	result := ModuleHeader{
 		DB:         database.Database(config),
 		Encryption: encryption.Encryption(),
 		Identfier:  identifier.Identifier(),

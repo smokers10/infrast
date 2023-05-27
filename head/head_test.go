@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func callHead() *head {
+func callHead() *ModuleHeader {
 	h, err := Head("config")
 	if err != nil {
 		panic(err)
