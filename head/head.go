@@ -11,11 +11,12 @@ import (
 )
 
 type ModuleHeader struct {
-	DB         contract.DatabaseContract
-	Encryption contract.EncryptionContract
-	Identfier  contract.IdentfierContract
-	JWT        contract.JsonWebTokenContract
-	Mailer     contract.MailerContract
+	DB            contract.DatabaseContract
+	Encryption    contract.EncryptionContract
+	Identfier     contract.IdentfierContract
+	JWT           contract.JsonWebTokenContract
+	Mailer        contract.MailerContract
+	Configuration *config.Configuration
 }
 
 func Head(path string) (*ModuleHeader, error) {
@@ -25,11 +26,12 @@ func Head(path string) (*ModuleHeader, error) {
 	}
 
 	result := ModuleHeader{
-		DB:         database.Database(config),
-		Encryption: encryption.Encryption(),
-		Identfier:  identifier.Identifier(),
-		JWT:        jsonwebtoken.JsonWebToken(config),
-		Mailer:     mailer.Mailer(config),
+		DB:            database.Database(config),
+		Encryption:    encryption.Encryption(),
+		Identfier:     identifier.Identifier(),
+		JWT:           jsonwebtoken.JsonWebToken(config),
+		Mailer:        mailer.Mailer(config),
+		Configuration: config,
 	}
 
 	return &result, nil
