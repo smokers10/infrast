@@ -1,23 +1,3 @@
-# go-infrastructure
-A simpler way to setup infrastructure for your golang project!
-
-## Provided Functionality
-* Database (PostgreSQL & mongoDB)
-* Encryption (Bcrypt)
-* Json Web Token
-* Identifier (Google Identifier)
-* SMTP
-* Mock Contract On Every Infra Except Databases
-* Middleware (Work Only On Go-Fiber Framework Only)
-* ACL (Access Control List)
-
-## How To Access Every Sub Modules?
-you can access every provided infrastructure by calling its function directly or use head function to access all infrastructure in singe function call, here step-by-step to use head function :
-* Make configuration YAML (follow the prefered vonfiguration format below).
-* Call head function on your project it will require configuration YAML file path.
-
-### Prefered Configuration Format
-```
 application :
   port : ":8000"
   secret : "172y87f1"
@@ -107,50 +87,5 @@ user_management :
     validity_duration : 900000
     email_template_path : "template/forgot-password.html"
     user_type_property : "user_type"
-```
-## User Management
-This feature can help you dealing with basic user management, This feature has functionality like :
-* Login
-* 3-Step Registration (input credential -> Verification -> Input Bio)
-* Email / Phone Verification
-* Reset Password
 
-Note : feature not suitable for every case! i will make documentation about this later
-
-### How to Use User Management
-
-## How About Unit Testing ?
-i made mock contract on every infrastructure except databases but you need to use Testify package to make it work, just in case you does'nt have Testify package on your project please run command:
-
-```
-$ go get github.com/stretchr/testify
-```
-if you already have Testify on your project it's good to go! see code example below:
-
-```
-func TestTest(t *testing.T) {
-	mailerMock := contract.MailerContractMock{Mock: mock.Mock{}}
-	h := head.ModuleHeader{
-		Mailer: &mailerMock,
-	}
-
-	t.Run("Failed", func(t *testing.T) {
-		mailerMock.Mock.On("Send", []string{mock.Anything}, mock.Anything, mock.Anything).Return(errors.New("error send email")).Once()
-		_, err := Register(&h, mock.Anything)
-
-		assert.NotEmpty(t, err)
-		t.Logf("error send email : %v\n", err.Error())
-	})
-}
-
-```
-
-## Upcoming Feature
-Here the list of my tech debt :
-* Table Structure Checker (yaml table properties vs table structure from DB)
-* Whatsapp integration (security concern, reset password and verification)
-* Firebase integration
-* Payment Gateway Integration
-* Basic ACLS
-* Middleware
-* Go-Fiber Integration
+    

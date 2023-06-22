@@ -152,4 +152,43 @@ func TestReader(t *testing.T) {
 		assert.NotEmpty(t, smtp.Port)
 		assert.NotEmpty(t, smtp.Sender)
 	})
+
+	t.Run("user management", func(t *testing.T) {
+		c := c.UserManagement
+		assert.NotEmpty(t, c.UserCredential)
+		assert.NotEmpty(t, c.Login)
+		assert.NotEmpty(t, c.Registration)
+		assert.NotEmpty(t, c.ResetPassword)
+		t.Run("user credential check", func(t *testing.T) {
+			t.Logf("user credential length : %v", len(c.UserCredential))
+			for _, v := range c.UserCredential {
+				assert.NotEmpty(t, v.IDProperty)
+				assert.NotEmpty(t, v.PhotoProfileProperty)
+				assert.NotEmpty(t, v.Credential)
+				assert.NotEmpty(t, v.Type)
+				assert.NotEmpty(t, v.UserTable)
+				assert.NotEmpty(t, v.PasswordProperty)
+			}
+		})
+
+		t.Run("Login Check", func(t *testing.T) {
+			assert.NotEmpty(t, c.Login.TableName)
+			assert.NotEmpty(t, c.Login.TokenProperty)
+		})
+
+		t.Run("Registration Check", func(t *testing.T) {
+			assert.NotEmpty(t, c.Registration.TokenProperty)
+			assert.NotEmpty(t, c.Registration.OTPProperty)
+			assert.NotEmpty(t, c.Registration.TableName)
+			assert.NotEmpty(t, c.Registration.CredentialProperty)
+		})
+
+		t.Run("Reset Password Check", func(t *testing.T) {
+			assert.NotEmpty(t, c.ResetPassword.CreatedAtProperty)
+			assert.NotEmpty(t, c.ResetPassword.OTPProperty)
+			assert.NotEmpty(t, c.ResetPassword.TableName)
+			assert.NotEmpty(t, c.ResetPassword.TokenProperty)
+			assert.NotEmpty(t, c.ResetPassword.ValidityDuration)
+		})
+	})
 }

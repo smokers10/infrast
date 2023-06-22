@@ -8,7 +8,8 @@ import (
 )
 
 func TestMailer(t *testing.T) {
-	c, err := config.Reader("config.yaml")
+	ch := config.ConfigurationHead()
+	c, err := ch.Read("config.yaml")
 	if err != nil {
 		t.Fatalf("Error config reader : %v\n", err.Error())
 	}

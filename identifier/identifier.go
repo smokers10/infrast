@@ -1,11 +1,29 @@
 package identifier
 
 import (
+	"errors"
+	"time"
+
 	"github.com/google/uuid"
+	"github.com/smokers10/go-infrastructure/config"
 	"github.com/smokers10/go-infrastructure/contract"
+	"github.com/xlzd/gotp"
 )
 
-type identifierImplementation struct{}
+type identifierImplementation struct {
+	Config *config.Application
+}
+
+// GenerateOTP implements contract.IdentfierContract
+func (i *identifierImplementation) GenerateOTP() (string, error) {
+	TOTP := gotp.NewDefaultTOTP(i.Config.Secret)
+
+	if i.Config.Secret == "" {
+		return "", errors.New("application secret not exists")
+	}
+
+	return TOTP.At(time.Now().Unix()), nil
+}
 
 // MakeIdentifier implements contract.IdentfierContract
 func (i *identifierImplementation) MakeIdentifier() (string, error) {
@@ -16,6 +34,6 @@ func (i *identifierImplementation) MakeIdentifier() (string, error) {
 	return id.String(), nil
 }
 
-func Identifier() contract.IdentfierContract {
-	return &identifierImplementation{}
+func Identifier(config *config.Configuration) contract.IdentfierContract {
+	return &identifierImplementation{Config: &config.Application}
 }

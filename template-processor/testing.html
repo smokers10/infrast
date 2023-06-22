@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Forgot Password</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    h1 {
+      color: #333333;
+      margin-bottom: 20px;
+    }
+    p {
+      margin-bottom: 20px;
+    }
+    .otp {
+      display: inline-block;
+      padding: 10px 20px;
+      border: 1px solid #3498db;
+      border-radius: 4px;
+      font-size: 18px;
+      color: #333333;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Atur Ulang Kata Sandi</h1>
+    <p>Hallo,{{.reciever}}</p>
+    <p>Anda baru saja meminta untuk atur ulang kata sandi. Silahkan gunakan OTP berikut untuk mengatur ulang kata sandi :</p>
+    <p class="otp">{{.otp}}</p>
+    <p>biarkan jika Anda tidak merasa meminta request ini</p>
+    <p>Salam hangat</p>
+    <p>LPI Apps</p>
+  </div>
+</body>
+</html>

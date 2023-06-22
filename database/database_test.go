@@ -10,7 +10,7 @@ import (
 func TestDatabase(t *testing.T) {
 	// define mock config
 	c := config.Configuration{
-		PostgreSQL: config.DatabasePostgreSQL{
+		PostgreSQL: config.PostgresConfig{
 			Host:                  "localhost",
 			Port:                  5432,
 			User:                  "testuser",
@@ -20,7 +20,7 @@ func TestDatabase(t *testing.T) {
 			MaxIdleConnections:    2,
 			ConnectionMaxLifeTime: 10,
 		},
-		MongoDB: config.DatabaseMongoDB{
+		MongoDB: config.MongoDBConfig{
 			URI:                "mongodb://testuser:testpass@localhost:27017/?authMechanism=SCRAM-SHA-1",
 			MaxPool:            10,
 			MinPool:            2,
