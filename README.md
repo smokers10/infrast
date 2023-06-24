@@ -2,21 +2,26 @@
 A simpler way to setup infrastructure for your golang project!
 
 ## Provided Functionality
-* Database (PostgreSQL & mongoDB)
+* Database (Postgre & mongoDB)
 * Encryption (Bcrypt)
 * Json Web Token
 * Identifier (Google Identifier)
 * SMTP
-* Mock Contract On Every Infra Except Databases
-* Middleware (Work Only On Go-Fiber Framework Only)
+* Mock Contract On Every Sub-Modules
+* Middleware (Fiber Framework)
 * ACL (Access Control List)
+* Whatsapp For Notification (Security Concern, Verification, Reset Password, etc)
+* Firebase
+* Payment Gateway (Midtrans)
 
 ## How To Access Every Sub Modules?
-you can access every provided infrastructure by calling its function directly or use head function to access all infrastructure in singe function call, here step-by-step to use head function :
+you can access every provided sub modules by calling its function directly or use head function to access all sub modules in singe function call, here step-by-step to use head function :
 * Make configuration YAML (follow the prefered vonfiguration format below).
 * Call head function on your project it will require configuration YAML file path.
 
-### Prefered Configuration Format
+note :  user management is excluded from head
+
+## Basic Configuration
 ```
 application :
   port : ":8000"
@@ -42,6 +47,33 @@ smtp :
   username : "testuser"
   port : 5432
   sender : "sender"
+```
+### Basic Configuration Documentation
+Here the documentation of every configuration 
+### 1. Aplication
+This configuration is used for basic configuration of your project to set port and aplication secret
+### 2. Postgres
+This configuration is used to setup postgres db basic configuration
+### 3. MongoDB 
+This configuration is used to setup mongo db basic configuration
+### 4. SMTP 
+This configuration is used to setup SMTP basic configuration
+
+## User Management
+This feature can help you dealing with basic user management, This feature has functionality like :
+* Login
+* 3-Step Registration (input credential (email / phone) -> Verification -> Input Bio)
+* Reset Password
+* Device ID (mobile & web) Based Authentication
+
+### User Management Preparation - CONFIGURATION !
+I documented this configuration separately from basic config i.e aplication, database, etc because this configuration has it own rules rather than basic configuration that work staticaly on system. User management configuration will affect your project slightly (it will take your flexibelity a litle bit) so in order to make user management feature work perfectly you need to follow certain rules:
+1. You need to create certain table on your database (user, login, registration, user device, reset_password)
+2. every table must have certain property
+
+### User Management Configuration YAML Format
+In order to use user management feature you must have following configuration on your YAML file:
+```
 user_management :
   user_credential : [
     {
@@ -108,16 +140,75 @@ user_management :
     email_template_path : "template/forgot-password.html"
     user_type_property : "user_type"
 ```
-## User Management
-This feature can help you dealing with basic user management, This feature has functionality like :
-* Login
-* 3-Step Registration (input credential -> Verification -> Input Bio)
-* Email / Phone Verification
-* Reset Password
 
-Note : feature not suitable for every case! i will make documentation about this later
+### 1. User Credential
+user credential is basicaly configuration to define user table i.e users, customers or admins so system can access it to do some data reading and basic manipulation. In order to make it work you must have following properties on your table:
+* id
+* photo profile
+* password
+* username
+* email
+* phone
 
-### How to Use User Management
+other than that there is also neccesary configuration that you must set like : 
+* type -> this used to identify type of user on middleware level
+* credential -> this work like marker on credential properties, for example if you want your system has ability to login with using username & email you can set credential like this:
+```
+{
+  credential : ["username", "email"]
+}
+```
+### 2. Login
+This configuration is used to make system recognized which login table. Here the list of table properties you must have on your login table :
+* token
+* failed counter / failed attempt
+* user type 
+* credential 
+* device id
+* logged at
+* attempted at
+
+other than that there is also neccesary login configuration you must set :
+* max failed attempt -> this is threshold of how many failed login attempt 
+* login block duration -> this is where you define login suspension timeout
+* email template path -> this is used to define security email template path
+
+### 3. User Device
+This configuration to set user device table to stire device id that user has. Here the list of table properties your must have on your user device table:
+* id
+* device id
+* user id
+* user type
+
+Other than that there also neccesary user device configuration you must set :
+* email_template_path -> this value is used when user login on another device system will send security concern mail to confirm whether device is owned by user or not :
+
+### 4. Registration
+This configuration is used to make system able to reconize which registration table. Here the table properties you must have on your registration table :
+* id
+* credential
+* token
+* otp
+* status
+* device id
+* created at 
+* user type
+
+Other than that here the configuration you must set :
+* email template path -> this value is used when new user registered to your system
+
+## 5. Reset Password
+This configuration is used to make system reconized which is reset password table. Here the table properties you must have on you forgot password table
+* id
+* token
+* otp
+* credential 
+* created at
+* user type
+
+Other than that here other neccesary configuration you must set :
+* validity duration - this value hold how long reset password is valid in second
+* email template path - this value is used when user request reset password session so system will be able to send reset password OTP to registered user email
 
 ## How About Unit Testing ?
 i made mock contract on every infrastructure except databases but you need to use Testify package to make it work, just in case you does'nt have Testify package on your project please run command:
@@ -147,10 +238,8 @@ func TestTest(t *testing.T) {
 
 ## Upcoming Feature
 Here the list of my tech debt :
-* Table Structure Checker (yaml table properties vs table structure from DB)
+* Midleware Integrated With Fiber Framework
+* Basic ACLS
 * Whatsapp integration (security concern, reset password and verification)
 * Firebase integration
-* Payment Gateway Integration
-* Basic ACLS
-* Middleware
-* Go-Fiber Integration
+* Payment Gateway Integration (Midtrans)

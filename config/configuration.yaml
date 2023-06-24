@@ -65,7 +65,7 @@ user_management :
     device_id_property : "device_id"
     user_id_property : "user_id"
     user_type_property : "user_type"
-    email_template_path : "template/device-warning.html"
+    email_template_path : "template/new-device-warning.html"
   registration : 
     table_name : "registration"
     id_property : "id"

@@ -1,13 +1,17 @@
 package head
 
 import (
+	"fmt"
+
 	"github.com/smokers10/go-infrastructure/config"
 	"github.com/smokers10/go-infrastructure/contract"
 	"github.com/smokers10/go-infrastructure/database"
 	"github.com/smokers10/go-infrastructure/encryption"
 	"github.com/smokers10/go-infrastructure/identifier"
 	"github.com/smokers10/go-infrastructure/jsonwebtoken"
+	"github.com/smokers10/go-infrastructure/lib"
 	"github.com/smokers10/go-infrastructure/mailer"
+	tablestructurechecker "github.com/smokers10/go-infrastructure/table-structure-checker"
 	templateprocessor "github.com/smokers10/go-infrastructure/template-processor"
 )
 
@@ -36,6 +40,23 @@ func Head(path string) (*ModuleHeader, error) {
 		Mailer:            mailer.Mailer(config),
 		TemplateProcessor: templateprocessor.TemplateProccessor(),
 		Configuration:     config,
+	}
+
+	sql, err := result.DB.PosgresSQL()
+	if err != nil {
+		return nil, fmt.Errorf("error call postgre db : %v", err.Error())
+	}
+
+	checkerRepo := tablestructurechecker.TableStructureCheckerRepository(sql)
+	checker := tablestructurechecker.TableStructureChecker(checkerRepo)
+	checkResult, err := checker.StructureChecker(&config.UserManagement)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(checkResult) != 0 {
+		lib.CheckResultLogFormat(checkResult)
+		return nil, fmt.Errorf("user management properties mismatch on %v table(s) see the logs above", checkResult)
 	}
 
 	return &result, nil

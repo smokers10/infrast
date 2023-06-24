@@ -1,0 +1,13 @@
+user_management :
+  login : 
+    table_name : "login"
+    token_property : "token"
+    failed_counter_property : "failed_attempt"
+    type_property : "user_type"
+    credential_property : "credential"
+    login_at_property : "login_at"
+    device_id_property : "device_id"
+    attempt_at_property : "attempt_at"
+    max_failed_attempt : 3
+    login_block_duration : 300
+    email_template_path : "template/login-security-concern.html"

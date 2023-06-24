@@ -1,0 +1,12 @@
+user_management :
+  registration : 
+    table_name : "registration"
+    id_property : "id"
+    credential_property : "credential"
+    token_property : "token"
+    otp_property : "otp"
+    registration_status_property : "status"
+    device_id_property : "device_id"
+    created_at_property : "created_at"
+    email_template_path : "template/registration.html"
+    user_type_property : "user_type"
