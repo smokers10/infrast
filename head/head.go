@@ -27,7 +27,7 @@ type ModuleHeader struct {
 
 func Head(path string) (*ModuleHeader, error) {
 	ch := config.ConfigurationHead()
-	config, err := ch.Read("config.yaml")
+	config, err := ch.Read(path)
 	if err != nil {
 		return nil, err
 	}
