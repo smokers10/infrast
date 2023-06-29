@@ -16,6 +16,7 @@ func CheckResultLogFormat(results []contract.CheckResult) {
 			for _, v2 := range v.Mismatch {
 				fmt.Println(v2)
 			}
+			fmt.Printf("\n\n")
 		}
 	}
 }
