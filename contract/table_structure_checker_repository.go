@@ -1,18 +1,12 @@
 package contract
 
 import (
-	"database/sql"
-
 	"github.com/stretchr/testify/mock"
 )
 
 type Column struct {
-	Field   string
-	Type    string
-	Null    string
-	Key     string
-	Default sql.NullString
-	Extra   string
+	Field string
+	Type  string
 }
 
 type TableStructureCheckerRepository interface {

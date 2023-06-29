@@ -1,7 +1,6 @@
 package tablestructurechecker
 
 import (
-	"database/sql"
 	"fmt"
 	"testing"
 
@@ -14,7 +13,7 @@ func TestStructureGetter(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
 	repository := TableStructureCheckerRepository(db)
-	query := "DESCRIBE"
+	query := "select column_name, data_type from INFORMATION_SCHEMA.COLUMNS where table_name = \\$1"
 
 	t.Run("error on prepare", func(t *testing.T) {
 		mock.ExpectPrepare(query).WillReturnError(fmt.Errorf("error prepare"))
@@ -35,21 +34,21 @@ func TestStructureGetter(t *testing.T) {
 
 	t.Run("successful execution", func(t *testing.T) {
 		mock.ExpectPrepare(query)
-		rows := sqlmock.NewRows([]string{"Field", "Type", "Null", "Key", "Default", "Extra"}).
-			AddRow("id", "int", "NO", "PRI", nil, "").
-			AddRow("name", "varchar", "YES", "", sql.NullString{String: "John Doe", Valid: true}, "").
-			AddRow("age", "int", "YES", "", nil, "").
-			AddRow("created_at", "datetime", "NO", "", sql.NullString{String: "2021-01-01 12:00:00", Valid: true}, "DEFAULT_GENERATED")
+		rows := sqlmock.NewRows([]string{"Field", "Type"}).
+			AddRow("id", "int").
+			AddRow("name", "varchar").
+			AddRow("age", "int").
+			AddRow("created_at", "datetime")
 		mock.ExpectQuery(query).WillReturnRows(rows)
 
 		columns, err := repository.StructureGetter("mytable")
 		assert.NoError(t, err)
 
 		expectedColumns := []contract.Column{
-			{Field: "id", Type: "int", Null: "NO", Key: "PRI", Default: sql.NullString{}, Extra: ""},
-			{Field: "name", Type: "varchar", Null: "YES", Key: "", Default: sql.NullString{String: "John Doe", Valid: true}, Extra: ""},
-			{Field: "age", Type: "int", Null: "YES", Key: "", Default: sql.NullString{}, Extra: ""},
-			{Field: "created_at", Type: "datetime", Null: "NO", Key: "", Default: sql.NullString{String: "2021-01-01 12:00:00", Valid: true}, Extra: "DEFAULT_GENERATED"},
+			{Field: "id", Type: "int"},
+			{Field: "name", Type: "varchar"},
+			{Field: "age", Type: "int"},
+			{Field: "created_at", Type: "datetime"},
 		}
 
 		assert.Equal(t, expectedColumns, columns)
