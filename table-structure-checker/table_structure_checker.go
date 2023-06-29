@@ -303,7 +303,7 @@ func isMatch(columns []contract.Column, propertyNameYAML string) string {
 		}
 	}
 
-	return fmt.Sprintf("- mismatch property naming : %s on YAML configuration file", propertyNameYAML)
+	return fmt.Sprintf("- mismatch property naming : %s on YAML configuration file\n", propertyNameYAML)
 }
 
 func TableStructureChecker(repository contract.TableStructureCheckerRepository) contract.TableStructureChecker {
