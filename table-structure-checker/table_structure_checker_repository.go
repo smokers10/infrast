@@ -2,6 +2,7 @@ package tablestructurechecker
 
 import (
 	"database/sql"
+	"fmt"
 
 	"github.com/lib/pq"
 	"github.com/smokers10/go-infrastructure/contract"
@@ -33,6 +34,9 @@ func (i *tableStructureCheckerRepositoryImplementation) StructureGetter(tablenam
 		}
 		columns = append(columns, column)
 	}
+
+	fmt.Println(tablename)
+	fmt.Println(columns)
 
 	return columns, nil
 }
