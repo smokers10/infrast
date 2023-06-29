@@ -8,10 +8,11 @@ import (
 
 func CheckResultLogFormat(results []contract.CheckResult) {
 	if len(results) == 0 {
-		fmt.Println("table property check : OK!")
+		fmt.Println("TSC result : OK!")
 	} else {
+		fmt.Println("TSC Result : your YAML configuration has problem see logs bellow :")
 		for _, v := range results {
-			fmt.Printf("mismatch property naming on table %s :\n", v.TableName)
+			fmt.Printf("table %s configuration :\n", v.TableName)
 			for _, v2 := range v.Mismatch {
 				fmt.Println(v2)
 			}
