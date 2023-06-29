@@ -14,9 +14,11 @@ func TestReader(t *testing.T) {
 	}
 
 	t.Run("check resgitered user type list", func(t *testing.T) {
-		rutl, err := ch.RegisteredUserType()
+		RUTL, err := ch.RegisteredUserType()
 		assert.Empty(t, err)
-		t.Log(rutl)
+		for _, v := range RUTL {
+			t.Logf("registered user : %s", v)
+		}
 	})
 
 	t.Run("application", func(t *testing.T) {

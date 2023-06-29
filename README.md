@@ -1,16 +1,15 @@
 # go-infrastructure
 A simpler way to setup infrastructure for your golang project!
 
-## Provided Functionality
+## Provided Modules
 * Database (Postgre & mongoDB)
 * Encryption (Bcrypt)
 * Json Web Token
 * Identifier (Google Identifier)
 * SMTP
-* Mock Contract On Every Sub-Modules
-* Middleware (Fiber Framework)
-* ACL (Access Control List)
-* Whatsapp For Notification (Security Concern, Verification, Reset Password, etc)
+* Mock Contract
+* Middleware
+* Whatsapp Notification (Security Concern, Verification, Reset Password, etc)
 * Firebase
 * Payment Gateway (Midtrans)
 
@@ -19,7 +18,7 @@ you can access every provided sub modules by calling its function directly or us
 * Make configuration YAML (follow the prefered vonfiguration format below).
 * Call head function on your project it will require configuration YAML file path.
 
-note :  user management is excluded from head
+note :  user management ^ Middleware is excluded from head
 
 ## Basic Configuration
 ```
@@ -238,8 +237,6 @@ func TestTest(t *testing.T) {
 
 ## Upcoming Feature
 Here the list of my tech debt :
-* Midleware Integrated With Fiber Framework
-* Basic ACLS
-* Whatsapp integration (security concern, reset password and verification)
-* Firebase integration
+* Whatsapp
+* Firebase
 * Payment Gateway Integration (Midtrans)

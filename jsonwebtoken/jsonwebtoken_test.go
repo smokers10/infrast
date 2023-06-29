@@ -2,6 +2,7 @@ package jsonwebtoken
 
 import (
 	"testing"
+	"time"
 
 	"github.com/smokers10/go-infrastructure/config"
 	"github.com/stretchr/testify/assert"
@@ -9,9 +10,11 @@ import (
 
 func TestJsonWebToken(t *testing.T) {
 	payload := map[string]interface{}{
-		"name": "john doe",
-		"age":  24,
+		"type":    "admins",
+		"user_id": 10,
+		"iat":     time.Now().AddDate(0, 0, 7).Unix(),
 	}
+
 	// define mock config
 	c := config.Configuration{
 		Application: config.Application{
@@ -32,9 +35,11 @@ func TestJsonWebToken(t *testing.T) {
 		p, err := jwt.ParseToken(token)
 
 		assert.Empty(t, err)
-		assert.NotEmpty(t, p["name"].(string))
-		assert.NotEmpty(t, p["age"].(float64))
-		assert.Equal(t, "john doe", p["name"].(string))
-		assert.Equal(t, 24, int(p["age"].(float64)))
+		assert.NotEmpty(t, p["type"].(string))
+		assert.NotEmpty(t, p["user_id"].(float64))
+		assert.NotEmpty(t, p["iat"].(float64))
+		assert.Equal(t, "admins", p["type"].(string))
+		assert.Equal(t, 10, int(p["user_id"].(float64)))
+		assert.Equal(t, time.Now().AddDate(0, 0, 7).Unix(), int64(p["iat"].(float64)))
 	})
 }

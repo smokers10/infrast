@@ -187,10 +187,9 @@ func (i *userManagementImplementation) Login(credential string, password string,
 
 	// make token
 	payload := map[string]interface{}{
-		"id":         user.ID,
-		"credential": credential,
-		"type":       i.UserManagementConfig.SelectedCredential.Type,
-		"iat":        time.Now().AddDate(0, 0, 7).Unix(),
+		"id":   user.ID,
+		"type": i.UserManagementConfig.SelectedCredential.Type,
+		"iat":  time.Now().AddDate(0, 0, 7).Unix(),
 	}
 
 	// sign JWT token
@@ -326,13 +325,10 @@ func (i *userManagementImplementation) RegistrationBioData(credential string, qu
 
 	// make token
 	payload := map[string]interface{}{
-		"id":         insertedUser.ID,
-		"credential": credential,
-		"type":       i.UserManagementConfig.SelectedCredential.Type,
-		"iat":        time.Now().AddDate(0, 0, 7).Unix(),
+		"id":   user.ID,
+		"type": i.UserManagementConfig.SelectedCredential.Type,
+		"iat":  time.Now().AddDate(0, 0, 7).Unix(),
 	}
-
-	fmt.Println(payload)
 
 	// sign jwt token
 	jwtToken, err := i.JWT.Sign(payload)
@@ -460,19 +456,19 @@ func (i *userManagementImplementation) phoneRegistration(credential string, devi
 }
 
 func UserManagement(configuration *config.Configuration, repository contract.UserManagementRepository, uuid contract.IdentfierContract, encryption contract.EncryptionContract, jwt contract.JsonWebTokenContract, mailer contract.MailerContract, template_processor contract.TemplateProcessor, user_type string) (contract.UserManagement, error) {
-	userCredential := config.UserCredential{}
+	selectedUserCredential := config.UserCredential{}
 	for _, v := range configuration.UserManagement.UserCredential {
 		if v.Type == user_type {
-			userCredential = v
+			selectedUserCredential = v
 			break
 		}
 	}
 
-	if userCredential.Type != user_type {
+	if selectedUserCredential.Type != user_type {
 		return nil, errors.New("user type not registered")
 	}
 
-	configuration.UserManagement.SelectedCredential = userCredential
+	configuration.UserManagement.SelectedCredential = selectedUserCredential
 
 	return &userManagementImplementation{
 		UserManagementConfig: &configuration.UserManagement,

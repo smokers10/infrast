@@ -25,7 +25,7 @@ smtp :
 user_management :
   user_credential : [
     {
-      type : "admin",
+      type : "ADMIN",
       user_table : "admins",
       credential : ["username", "email"],
       id_property : "id",
