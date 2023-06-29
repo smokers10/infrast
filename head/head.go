@@ -19,10 +19,6 @@ import (
 	usermanagementrepository "github.com/smokers10/infrast/user-management-repository"
 )
 
-type Head struct {
-	Module module
-}
-
 type module struct {
 	DB                       contract.DatabaseContract
 	Encryption               contract.EncryptionContract
@@ -34,7 +30,11 @@ type module struct {
 	Configuration            *config.Configuration
 }
 
-func (h *Head) Initialize(path string) (*module, error) {
+func Head() *module {
+	return &module{}
+}
+
+func (h *module) Initialize(path string) (*module, error) {
 	ch := config.ConfigurationHead()
 	config, err := ch.Read(path)
 	if err != nil {
@@ -58,7 +58,7 @@ func (h *Head) Initialize(path string) (*module, error) {
 		Configuration:            config,
 	}
 
-	h.Module = modules
+	h = &modules
 
 	checkerRepo := tablestructurechecker.TableStructureCheckerRepository(sql)
 	checker := tablestructurechecker.TableStructureChecker(checkerRepo)
@@ -75,8 +75,8 @@ func (h *Head) Initialize(path string) (*module, error) {
 	return &modules, nil
 }
 
-func (h *Head) Middleware(userType string) (contract.Middleware, error) {
-	m, err := middleware.Middleware(&h.Module.Configuration.UserManagement, h.Module.UserManagementRepository, h.Module.JWT, userType)
+func (h *module) Middleware(userType string) (contract.Middleware, error) {
+	m, err := middleware.Middleware(&h.Configuration.UserManagement, h.UserManagementRepository, h.JWT, userType)
 	if err != nil {
 		return nil, err
 	}
@@ -84,8 +84,8 @@ func (h *Head) Middleware(userType string) (contract.Middleware, error) {
 	return m, nil
 }
 
-func (h *Head) UserManagement(userType string) (contract.UserManagement, error) {
-	UM, err := usermanagement.UserManagement(h.Module.Configuration, h.Module.UserManagementRepository, h.Module.Identfier, h.Module.Encryption, h.Module.JWT, h.Module.Mailer, h.Module.TemplateProcessor, userType)
+func (h *module) UserManagement(userType string) (contract.UserManagement, error) {
+	UM, err := usermanagement.UserManagement(h.Configuration, h.UserManagementRepository, h.Identfier, h.Encryption, h.JWT, h.Mailer, h.TemplateProcessor, userType)
 	if err != nil {
 		return nil, err
 	}
