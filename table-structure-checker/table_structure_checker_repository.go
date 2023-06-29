@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/lib/pq"
 	"github.com/smokers10/go-infrastructure/contract"
 )
 
@@ -12,14 +11,14 @@ type tableStructureCheckerRepositoryImplementation struct{ db *sql.DB }
 
 // StructureGetter implements contract.TableStructureCheckerRepository.
 func (i *tableStructureCheckerRepositoryImplementation) StructureGetter(tablename string) (columns []contract.Column, failure error) {
-	query := `select column_name, data_type from INFORMATION_SCHEMA.COLUMNS where table_name = $1`
+	query := fmt.Sprintf(`SELECT column_name, data_type FROM INFORMATION_SCHEMA.COLUMNS where table_name = '%s'`, tablename)
 
 	stmt, err := i.db.Prepare(query)
 	if err != nil {
 		return nil, err
 	}
 
-	rows, err := stmt.Query(pq.QuoteIdentifier(tablename))
+	rows, err := stmt.Query()
 	if err != nil {
 		return nil, err
 	}
@@ -34,9 +33,6 @@ func (i *tableStructureCheckerRepositoryImplementation) StructureGetter(tablenam
 		}
 		columns = append(columns, column)
 	}
-
-	fmt.Println(tablename)
-	fmt.Println(columns)
 
 	return columns, nil
 }
