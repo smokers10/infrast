@@ -1,6 +1,7 @@
 package head
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/smokers10/go-infrastructure/config"
@@ -56,7 +57,7 @@ func Head(path string) (*ModuleHeader, error) {
 
 	if len(checkResult) != 0 {
 		lib.CheckResultLogFormat(checkResult)
-		return nil, fmt.Errorf("user management properties mismatch on %v table(s) see the logs above", checkResult)
+		return nil, errors.New("user management TSC error")
 	}
 
 	return &result, nil
