@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/smokers10/go-infrastructure/config"
-	"github.com/smokers10/go-infrastructure/contract"
+	"github.com/smokers10/infrast/config"
+	"github.com/smokers10/infrast/contract"
 )
 
 type jsonwebtokenImplementation struct {

@@ -3,8 +3,8 @@ package tablestructurechecker
 import (
 	"fmt"
 
-	"github.com/smokers10/go-infrastructure/config"
-	"github.com/smokers10/go-infrastructure/contract"
+	"github.com/smokers10/infrast/config"
+	"github.com/smokers10/infrast/contract"
 )
 
 type tableStructureCheckerImplementation struct {

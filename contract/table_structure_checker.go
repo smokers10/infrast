@@ -1,6 +1,6 @@
 package contract
 
-import "github.com/smokers10/go-infrastructure/config"
+import "github.com/smokers10/infrast/config"
 
 type CheckResult struct {
 	TableName string

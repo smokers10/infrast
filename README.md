@@ -1,7 +1,7 @@
 # go-infrastructure
 A simpler way to setup infrastructure for your golang project!
 
-## Provided Modules
+## Provided Modules And Other
 * Database (Postgre & mongoDB)
 * Encryption (Bcrypt)
 * Json Web Token
@@ -18,9 +18,9 @@ you can access every provided sub modules by calling its function directly or us
 * Make configuration YAML (follow the prefered vonfiguration format below).
 * Call head function on your project it will require configuration YAML file path.
 
-note :  user management ^ Middleware is excluded from head
-
 ## Basic Configuration
+The basic configuration will accomodate configuration for basic module such as application, database, smtp, WA, and payment gateway. See YAML bellow :
+
 ```
 application :
   port : ":8000"
@@ -47,16 +47,6 @@ smtp :
   port : 5432
   sender : "sender"
 ```
-### Basic Configuration Documentation
-Here the documentation of every configuration 
-### 1. Aplication
-This configuration is used for basic configuration of your project to set port and aplication secret
-### 2. Postgres
-This configuration is used to setup postgres db basic configuration
-### 3. MongoDB 
-This configuration is used to setup mongo db basic configuration
-### 4. SMTP 
-This configuration is used to setup SMTP basic configuration
 
 ## User Management
 This feature can help you dealing with basic user management, This feature has functionality like :
@@ -65,13 +55,12 @@ This feature can help you dealing with basic user management, This feature has f
 * Reset Password
 * Device ID (mobile & web) Based Authentication
 
-### User Management Preparation - CONFIGURATION !
-I documented this configuration separately from basic config i.e aplication, database, etc because this configuration has it own rules rather than basic configuration that work staticaly on system. User management configuration will affect your project slightly (it will take your flexibelity a litle bit) so in order to make user management feature work perfectly you need to follow certain rules:
+### User Management Preparation
+We documented this configuration separately from basic configuration. In order to make user management feature work perfectly you need to follow certain rules:
 1. You need to create certain table on your database (user, login, registration, user device, reset_password)
 2. every table must have certain property
 
-### User Management Configuration YAML Format
-In order to use user management feature you must have following configuration on your YAML file:
+### User Management Configuration
 ```
 user_management :
   user_credential : [
@@ -141,7 +130,7 @@ user_management :
 ```
 
 ### 1. User Credential
-user credential is basicaly configuration to define user table i.e users, customers or admins so system can access it to do some data reading and basic manipulation. In order to make it work you must have following properties on your table:
+user credential is configuration to define user table i.e users, customers or admins so system can access it to do some data reading and basic manipulation. In order to make it work you must have following properties on your table:
 * id
 * photo profile
 * password

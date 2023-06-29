@@ -3,7 +3,7 @@ package identifier
 import (
 	"testing"
 
-	"github.com/smokers10/go-infrastructure/config"
+	"github.com/smokers10/infrast/config"
 )
 
 func TestIdentifier(t *testing.T) {

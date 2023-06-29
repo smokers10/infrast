@@ -6,8 +6,8 @@ import (
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/smokers10/go-infrastructure/config"
-	"github.com/smokers10/go-infrastructure/contract"
+	"github.com/smokers10/infrast/config"
+	"github.com/smokers10/infrast/contract"
 )
 
 type MiddlewareImpl struct {

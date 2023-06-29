@@ -3,7 +3,7 @@ package lib
 import (
 	"fmt"
 
-	"github.com/smokers10/go-infrastructure/contract"
+	"github.com/smokers10/infrast/contract"
 )
 
 func CheckResultLogFormat(results []contract.CheckResult) {

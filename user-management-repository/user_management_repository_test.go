@@ -7,8 +7,8 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/lib/pq"
-	"github.com/smokers10/go-infrastructure/config"
-	"github.com/smokers10/go-infrastructure/lib"
+	"github.com/smokers10/infrast/config"
+	"github.com/smokers10/infrast/lib"
 	"github.com/stretchr/testify/assert"
 )
 

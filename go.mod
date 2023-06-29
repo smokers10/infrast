@@ -1,4 +1,4 @@
-module github.com/smokers10/go-infrastructure
+module github.com/smokers10/infrast
 
 go 1.20
 

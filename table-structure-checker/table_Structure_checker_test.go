@@ -3,9 +3,9 @@ package tablestructurechecker
 import (
 	"testing"
 
-	"github.com/smokers10/go-infrastructure/config"
-	"github.com/smokers10/go-infrastructure/contract"
-	"github.com/smokers10/go-infrastructure/lib"
+	"github.com/smokers10/infrast/config"
+	"github.com/smokers10/infrast/contract"
+	"github.com/smokers10/infrast/lib"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )

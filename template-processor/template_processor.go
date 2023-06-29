@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"html/template"
 
-	"github.com/smokers10/go-infrastructure/contract"
+	"github.com/smokers10/infrast/contract"
 )
 
 type templateProcessorImplementation struct{}

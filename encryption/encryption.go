@@ -1,7 +1,7 @@
 package encryption
 
 import (
-	"github.com/smokers10/go-infrastructure/contract"
+	"github.com/smokers10/infrast/contract"
 	"golang.org/x/crypto/bcrypt"
 )
 

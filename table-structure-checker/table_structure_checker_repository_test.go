@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/smokers10/go-infrastructure/contract"
+	"github.com/smokers10/infrast/contract"
 	"github.com/stretchr/testify/assert"
 )
 

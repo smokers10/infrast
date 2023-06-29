@@ -3,8 +3,8 @@ package database
 import (
 	"testing"
 
-	"github.com/smokers10/go-infrastructure/config"
-	"github.com/smokers10/go-infrastructure/lib"
+	"github.com/smokers10/infrast/config"
+	"github.com/smokers10/infrast/lib"
 )
 
 func TestDatabase(t *testing.T) {

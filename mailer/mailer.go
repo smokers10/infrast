@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net/smtp"
 
-	"github.com/smokers10/go-infrastructure/config"
-	"github.com/smokers10/go-infrastructure/contract"
+	"github.com/smokers10/infrast/config"
+	"github.com/smokers10/infrast/contract"
 )
 
 type mailerImplementation struct {
