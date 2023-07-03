@@ -1,27 +1,27 @@
-# go-infrast
+# GO INFRAST!
 A simpler way to setup infrastructure for your golang project!
 
-## Provided Modules And Other
-* Database (Postgre & mongoDB)
-* Encryption (Bcrypt)
-* Json Web Token
-* Identifier (Google Identifier)
-* SMTP
-* Mock Contract
+# Provided Module
+here the module we provided for your project :
+* Database (Postgre & Mongo)
+* Encryption 
+* Identifier
+* JSON Web Token
+* SMTP With Template Processor
+* Payment Gateway (On Progress)
+* Whatsapp (On Progress)
+* Firebase (On Progress)
+* User Management With Table Property Checker
 * Middleware
-* Whatsapp Notification (Security Concern, Verification, Reset Password, etc)
-* Firebase
-* Payment Gateway (Midtrans)
-* User Management
 
-## How To Access Every Sub Modules?
-you can access every provided sub modules by calling its function directly or use head function to access all sub modules in singe function call, here step-by-step to use head function :
-* Make configuration YAML (follow the prefered vonfiguration format below).
-* Call head function on your project it will require configuration YAML file path.
-
-## Basic Configuration
-The basic configuration will accomodate configuration for basic module such as application, database, smtp, WA, and payment gateway. See YAML bellow :
-
+# Basic Usage
+## Step 1 : Installation
+first add go-infrast package to your project, by using this command :
+```
+go get github.com/smokers10/go-infrast
+```
+## Step 2 : Configuration
+make YAML file that contain configuration, here the example of configuration file you should make :
 ```
 application :
   port : ":8000"
@@ -48,25 +48,37 @@ smtp :
   port : 5432
   sender : "sender"
 ```
+### Step 3 : Call Go Infrast!
+here the code example to start using go-infrast : 
+```
+package main
 
-## User Management
-This feature can help you dealing with basic user management, This feature has functionality like :
-* Login
-* 3-Step Registration (input credential (email / phone) -> Verification -> Input Bio)
-* Reset Password
-* Device ID (mobile & web) Based Authentication
+import (
+	"github.com/gofiber/fiber/v2"
+	infrast "github.com/smokers10/infrast/head"
+)
 
-### User Management Preparation
-We documented this configuration separately from basic configuration. In order to make user management feature work perfectly you need to follow certain rules:
-1. You need to create certain table on your database (user, login, registration, user device, reset_password)
-2. every table must have certain property
+func main() {
+	app := fiber.New()
+	infrast, err := infrast.Head().Initialize("configuration.yaml")
+	if err != nil {
+		panic(err)
+	}
 
-### User Management Configuration
+	configuration := infrast.Configuration
+
+	app.Listen(configuration.Application.Port)
+}
+
+```
+# User Management & Middleware
+## Step 1 : Configuration
+To use user management & middleware you should add more configuration to your YAML file, here the configuration : 
 ```
 user_management :
   user_credential : [
     {
-      type : "admin",
+      type : "ADMIN",
       user_table : "admins",
       credential : ["username", "email"],
       id_property : "id",
@@ -106,7 +118,7 @@ user_management :
     device_id_property : "device_id"
     user_id_property : "user_id"
     user_type_property : "user_type"
-    email_template_path : "template/device-warning.html"
+    email_template_path : "template/new-device-warning.html"
   registration : 
     table_name : "registration"
     id_property : "id"
@@ -129,104 +141,38 @@ user_management :
     email_template_path : "template/forgot-password.html"
     user_type_property : "user_type"
 ```
+as you can see from yaml above you should have following table on your system <br>
+1. User Table
+2. Login Table
+3. Registration Table
+4. User Device Table
+5. Reset Password Table
 
-### 1. User Credential
-user credential is configuration to define user table i.e users, customers or admins so system can access it to do some data reading and basic manipulation. In order to make it work you must have following properties on your table:
-* id
-* photo profile
-* password
-* username
-* email
-* phone
-
-other than that there is also neccesary configuration that you must set like : 
-* type -> this used to identify type of user on middleware level
-* credential -> this work like marker on credential properties, for example if you want your system has ability to login with using username & email you can set credential like this:
+note : on each table you also need to define required property.
+## Step 2 : Call User Management Or Middleware
 ```
-{
-  credential : ["username", "email"]
-}
-```
-### 2. Login
-This configuration is used to make system recognized which login table. Here the list of table properties you must have on your login table :
-* token
-* failed counter / failed attempt
-* user type 
-* credential 
-* device id
-* logged at
-* attempted at
+package main
 
-other than that there is also neccesary login configuration you must set :
-* max failed attempt -> this is threshold of how many failed login attempt 
-* login block duration -> this is where you define login suspension timeout
-* email template path -> this is used to define security email template path
+import (
+	"github.com/gofiber/fiber/v2"
+	infrast "github.com/smokers10/infrast/head"
+)
 
-### 3. User Device
-This configuration to set user device table to stire device id that user has. Here the list of table properties your must have on your user device table:
-* id
-* device id
-* user id
-* user type
-
-Other than that there also neccesary user device configuration you must set :
-* email_template_path -> this value is used when user login on another device system will send security concern mail to confirm whether device is owned by user or not :
-
-### 4. Registration
-This configuration is used to make system able to reconize which registration table. Here the table properties you must have on your registration table :
-* id
-* credential
-* token
-* otp
-* status
-* device id
-* created at 
-* user type
-
-Other than that here the configuration you must set :
-* email template path -> this value is used when new user registered to your system
-
-## 5. Reset Password
-This configuration is used to make system reconized which is reset password table. Here the table properties you must have on you forgot password table
-* id
-* token
-* otp
-* credential 
-* created at
-* user type
-
-Other than that here other neccesary configuration you must set :
-* validity duration - this value hold how long reset password is valid in second
-* email template path - this value is used when user request reset password session so system will be able to send reset password OTP to registered user email
-
-## How About Unit Testing ?
-i made mock contract on every infrastructure except databases but you need to use Testify package to make it work, just in case you does'nt have Testify package on your project please run command:
-
-```
-$ go get github.com/stretchr/testify
-```
-if you already have Testify on your project it's good to go! see code example below:
-
-```
-func TestTest(t *testing.T) {
-	mailerMock := contract.MailerContractMock{Mock: mock.Mock{}}
-	h := head.ModuleHeader{
-		Mailer: &mailerMock,
+func main() {
+	app := fiber.New()
+	infrast, err := infrast.Head().Initialize("configuration.yaml")
+	if err != nil {
+		panic(err)
 	}
 
-	t.Run("Failed", func(t *testing.T) {
-		mailerMock.Mock.On("Send", []string{mock.Anything}, mock.Anything, mock.Anything).Return(errors.New("error send email")).Once()
-		_, err := Register(&h, mock.Anything)
+	configuration := infrast.Configuration
 
-		assert.NotEmpty(t, err)
-		t.Logf("error send email : %v\n", err.Error())
-	})
+  // call middleware
+  infrast.Middleware("user type") // <-- this must equal to user_credential.type other wise it will return error
+
+  // call user management
+ infrast.UserManagement("user type") // <-- this must equal to user_credential.type other wise it will return error
+
+	app.Listen(configuration.Application.Port)
 }
 
-```
-
-## Upcoming Feature
-Here the list of my tech debt :
-* Whatsapp
-* Firebase
-* Payment Gateway Integration (Midtrans)
