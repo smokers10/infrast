@@ -36,7 +36,7 @@ func Head() *module {
 }
 
 func (h *module) Initialize(path string) (*module, error) {
-	art := figure.NewColorFigure("INFRAST", "ANSI Regular", "red", true)
+	art := figure.NewColorFigure("INFRAST", "", "red", true)
 	art.Print()
 
 	fmt.Println("Phase 1 - Load Confugration")
