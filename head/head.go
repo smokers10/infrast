@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/common-nighthawk/go-figure"
 	"github.com/smokers10/infrast/config"
 	"github.com/smokers10/infrast/contract"
 	"github.com/smokers10/infrast/database"
@@ -35,18 +36,26 @@ func Head() *module {
 }
 
 func (h *module) Initialize(path string) (*module, error) {
+	art := figure.NewColorFigure("INFRAST", "ANSI Regular", "red", true)
+	art.Print()
+
+	fmt.Println("Phase 1 - Load Confugration")
 	ch := config.ConfigurationHead()
 	config, err := ch.Read(path)
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println("Phase 1 OK!")
 
+	fmt.Println("Phase 2 - Connect To Database")
 	database := database.Database(config)
 	sql, err := database.PosgresSQL()
 	if err != nil {
 		return nil, fmt.Errorf("error call postgre db : %v", err.Error())
 	}
+	fmt.Println("Phase 2 OK!")
 
+	fmt.Println("Phase 3 - Preparing Modules")
 	modules := module{
 		DB:                       database,
 		Encryption:               encryption.Encryption(),
@@ -57,9 +66,10 @@ func (h *module) Initialize(path string) (*module, error) {
 		UserManagementRepository: usermanagementrepository.UserManagementRepository(sql),
 		Configuration:            config,
 	}
-
 	h = &modules
+	fmt.Println("Phase 3 OK!")
 
+	fmt.Println("Phase 4 - Table Structure Checking")
 	checkerRepo := tablestructurechecker.TableStructureCheckerRepository(sql)
 	checker := tablestructurechecker.TableStructureChecker(checkerRepo)
 	checkResult, err := checker.StructureChecker(&config.UserManagement)
@@ -71,6 +81,7 @@ func (h *module) Initialize(path string) (*module, error) {
 		lib.CheckResultLogFormat(checkResult)
 		return nil, errors.New("user management TSC error")
 	}
+	fmt.Println("Phase 4 OK!")
 
 	return &modules, nil
 }

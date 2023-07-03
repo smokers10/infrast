@@ -1,4 +1,4 @@
-# go-infrastructure
+# go-infrast
 A simpler way to setup infrastructure for your golang project!
 
 ## Provided Modules And Other
@@ -12,6 +12,7 @@ A simpler way to setup infrastructure for your golang project!
 * Whatsapp Notification (Security Concern, Verification, Reset Password, etc)
 * Firebase
 * Payment Gateway (Midtrans)
+* User Management
 
 ## How To Access Every Sub Modules?
 you can access every provided sub modules by calling its function directly or use head function to access all sub modules in singe function call, here step-by-step to use head function :

@@ -187,9 +187,9 @@ func (i *userManagementImplementation) Login(credential string, password string,
 
 	// make token
 	payload := map[string]interface{}{
-		"id":   user.ID,
-		"type": i.UserManagementConfig.SelectedCredential.Type,
-		"iat":  time.Now().AddDate(0, 0, 7).Unix(),
+		"user_id": user.ID,
+		"type":    i.UserManagementConfig.SelectedCredential.Type,
+		"iat":     time.Now().AddDate(0, 0, 7).Unix(),
 	}
 
 	// sign JWT token
@@ -325,15 +325,14 @@ func (i *userManagementImplementation) RegistrationBioData(credential string, qu
 
 	// make token
 	payload := map[string]interface{}{
-		"id":   user.ID,
-		"type": i.UserManagementConfig.SelectedCredential.Type,
-		"iat":  time.Now().AddDate(0, 0, 7).Unix(),
+		"user_id": user.ID,
+		"type":    i.UserManagementConfig.SelectedCredential.Type,
+		"iat":     time.Now().AddDate(0, 0, 7).Unix(),
 	}
 
 	// sign jwt token
 	jwtToken, err := i.JWT.Sign(payload)
 	if err != nil {
-		fmt.Println(err)
 		return nil, "", 500, fmt.Errorf("token signing failure : %v", err.Error())
 	}
 
