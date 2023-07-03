@@ -38,22 +38,23 @@ func Head() *module {
 func (h *module) Initialize(path string) (*module, error) {
 	art := figure.NewColorFigure("INFRAST", "", "red", true)
 	art.Print()
+	fmt.Printf("CREATED BY : smokers10 \n\n")
 
-	fmt.Println("Phase 1 - Load Confugration")
+	fmt.Println("Phase 1 - Load Configration File")
 	ch := config.ConfigurationHead()
 	config, err := ch.Read(path)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("Phase 1 OK!")
+	fmt.Printf("Phase 1 OK!\n")
 
-	fmt.Println("Phase 2 - Connect To Database")
+	fmt.Println("Phase 2 - Prepare Database")
 	database := database.Database(config)
 	sql, err := database.PosgresSQL()
 	if err != nil {
 		return nil, fmt.Errorf("error call postgre db : %v", err.Error())
 	}
-	fmt.Println("Phase 2 OK!")
+	fmt.Printf("Phase 2 OK!\n")
 
 	fmt.Println("Phase 3 - Preparing Modules")
 	modules := module{
@@ -67,7 +68,7 @@ func (h *module) Initialize(path string) (*module, error) {
 		Configuration:            config,
 	}
 	h = &modules
-	fmt.Println("Phase 3 OK!")
+	fmt.Printf("Phase 4 OK!\n")
 
 	fmt.Println("Phase 4 - Table Structure Checking")
 	checkerRepo := tablestructurechecker.TableStructureCheckerRepository(sql)
@@ -81,7 +82,7 @@ func (h *module) Initialize(path string) (*module, error) {
 		lib.CheckResultLogFormat(checkResult)
 		return nil, errors.New("user management TSC error")
 	}
-	fmt.Println("Phase 4 OK!")
+	fmt.Printf("Phase 4 OK!\n")
 
 	return &modules, nil
 }
