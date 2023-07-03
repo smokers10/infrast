@@ -138,6 +138,10 @@ func (i *userManagementRepositoryImplementation) FindOneForgotPassword(umc *conf
 	defer stmt.Close()
 
 	if err := stmt.QueryRow(token, umc.SelectedCredential.Type).Scan(&result.ID, &result.Token, &result.OTP, &result.Credential, &result.CreatedAt); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+
 		return nil, err
 	}
 
@@ -161,6 +165,10 @@ func (i *userManagementRepositoryImplementation) FindOneLoginSession(umc *config
 	defer stmt.Close()
 
 	if err := stmt.QueryRow(device_id, umc.SelectedCredential.Type).Scan(&result.ID, &result.Token, &result.Credential, &result.Type, &result.LoginAt, &result.AttemptAt, &result.FailedCounter); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+
 		return nil, err
 	}
 
@@ -185,6 +193,10 @@ func (i *userManagementRepositoryImplementation) FindOneRegistration(umc *config
 	defer stmt.Close()
 
 	if err := stmt.QueryRow(token, umc.SelectedCredential.Type).Scan(&result.ID, &result.Token, &result.OTP, &result.Credential, &result.CreatedAt, &result.Type, &result.RegistrationStatus, &result.DeviceID); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+
 		return nil, err
 	}
 
@@ -207,6 +219,10 @@ func (i *userManagementRepositoryImplementation) FindOneRegistrationByCredential
 	defer stmt.Close()
 
 	if err := stmt.QueryRow(credential, umc.SelectedCredential.Type).Scan(&result.ID, &result.Token, &result.OTP, &result.Credential, &result.CreatedAt, &result.Type, &result.RegistrationStatus, &result.DeviceID); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+
 		return nil, err
 	}
 
@@ -233,6 +249,10 @@ func (i *userManagementRepositoryImplementation) FindOneUser(umc *config.UserMan
 	defer stmt.Close()
 
 	if err := stmt.QueryRow(credential).Scan(&result.ID, &result.Email, &result.Username, &result.PhoneNumber, &result.PhotoProfile, &result.Password); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+
 		return nil, err
 	}
 
