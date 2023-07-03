@@ -14,7 +14,7 @@ func TestUserQueryMaker(t *testing.T) {
 	t.Logf("where clause : %s", wc)
 
 	assert.Equal(t, "username, email", sc)
-	assert.Equal(t, "username = $1 AND email = $1", wc)
+	assert.Equal(t, "username = $1 OR email = $1", wc)
 }
 
 func TestInsertQueryValueMaker(t *testing.T) {
