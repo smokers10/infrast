@@ -421,7 +421,7 @@ func (i *userManagementImplementation) emailRegistration(credential string, devi
 	}
 
 	// send otp over email
-	if err := i.Mailer.Send([]string{i.GeneralConfig.SMTP.Sender}, "Registrasi Akun Baru", template); err != nil {
+	if err := i.Mailer.Send([]string{credential}, "Registrasi Akun Baru", template); err != nil {
 		return "", 500, fmt.Errorf("error send OTP email : %v", err.Error())
 	}
 
