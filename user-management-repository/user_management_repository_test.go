@@ -504,8 +504,9 @@ func TestFindOneUser(t *testing.T) {
 	selectedCred := umc.SelectedCredential
 	tableName := selectedCred.UserTable
 	_, whereClause := lib.UserQueryMakerTesting(selectedCred.Credential)
-	query := fmt.Sprintf("SELECT DISTINCT %s as id, %s as email, %s as phone , %s as photo_profile, %s as password, %s FROM %s WHERE %s LIMIT 1", selectedCred.IDProperty, selectedCred.EmailProperty, selectedCred.UsernameProperty, selectedCred.PhoneProperty,
-		selectedCred.PhotoProfileProperty, selectedCred.PasswordProperty, pq.QuoteIdentifier(tableName), whereClause)
+	query := fmt.Sprintf("SELECT DISTINCT %s as id, %s as email, %s as phone , %s as photo_profile, %s as password FROM %s WHERE %s LIMIT 1", selectedCred.IDProperty,
+		selectedCred.EmailProperty, selectedCred.PhoneProperty, selectedCred.PhotoProfileProperty, selectedCred.PasswordProperty, pq.QuoteIdentifier(tableName), whereClause)
+
 	t.Logf("query to test : %s", query)
 
 	t.Run("error on prepare", func(t *testing.T) {
@@ -523,6 +524,17 @@ func TestFindOneUser(t *testing.T) {
 		_, err := repository.FindOneUser(&umc, credential)
 		assert.NotEmpty(t, err)
 		t.Logf("error: %v", err.Error())
+	})
+
+	t.Run("user not find", func(t *testing.T) {
+		expectedRows := sqlmock.NewRows([]string{selectedCred.IDProperty, selectedCred.EmailProperty, selectedCred.UsernameProperty, selectedCred.PhoneProperty,
+			selectedCred.PhotoProfileProperty, selectedCred.PasswordProperty})
+		mock.ExpectPrepare(query)
+		mock.ExpectQuery(query).WithArgs(credential).WillReturnRows(expectedRows)
+
+		user, err := repository.FindOneUser(&umc, credential)
+		assert.Empty(t, err)
+		t.Log(user)
 	})
 
 	t.Run("success operation", func(t *testing.T) {

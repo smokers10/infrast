@@ -21,7 +21,7 @@ func UserQueryMakerTesting(credentials []string) (selectClause string, whereClau
 		whereClause += str + " = \\$1 OR "
 		selectClause += str + ", "
 	}
-	whereClause = whereClause[:len(whereClause)-5]
+	whereClause = whereClause[:len(whereClause)-4]
 	selectClause = selectClause[:len(selectClause)-2]
 
 	return selectClause, whereClause

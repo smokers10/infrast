@@ -132,17 +132,17 @@ func (i *userManagementRepositoryImplementation) FindOneForgotPassword(umc *conf
 		umc.ResetPassword.OTPProperty, umc.ResetPassword.CredentialProperty, umc.ResetPassword.CreatedAtProperty, pq.QuoteIdentifier(umc.ResetPassword.TableName), umc.ResetPassword.TokenProperty, umc.ResetPassword.UserTypeProperty)
 	stmt, err := i.db.Prepare(query)
 	if err != nil {
-		return nil, err
+		return &result, err
 	}
 
 	defer stmt.Close()
 
 	if err := stmt.QueryRow(token, umc.SelectedCredential.Type).Scan(&result.ID, &result.Token, &result.OTP, &result.Credential, &result.CreatedAt); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, nil
+			return &result, nil
 		}
 
-		return nil, err
+		return &result, err
 	}
 
 	result.Type = umc.SelectedCredential.Type
@@ -159,17 +159,17 @@ func (i *userManagementRepositoryImplementation) FindOneLoginSession(umc *config
 		umc.Login.FailedCounterProperty, pq.QuoteIdentifier(umc.Login.TableName), umc.Login.DeviceIDProperty, umc.Login.TypeProperty)
 	stmt, err := i.db.Prepare(query)
 	if err != nil {
-		return nil, err
+		return &result, err
 	}
 
 	defer stmt.Close()
 
 	if err := stmt.QueryRow(device_id, umc.SelectedCredential.Type).Scan(&result.ID, &result.Token, &result.Credential, &result.Type, &result.LoginAt, &result.AttemptAt, &result.FailedCounter); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, nil
+			return &result, nil
 		}
 
-		return nil, err
+		return &result, err
 	}
 
 	result.DeviceID = device_id
@@ -187,17 +187,17 @@ func (i *userManagementRepositoryImplementation) FindOneRegistration(umc *config
 		pq.QuoteIdentifier(umc.Registration.TableName), umc.Registration.TokenProperty, umc.Registration.UserTypeProperty)
 	stmt, err := i.db.Prepare(query)
 	if err != nil {
-		return nil, err
+		return &result, err
 	}
 
 	defer stmt.Close()
 
 	if err := stmt.QueryRow(token, umc.SelectedCredential.Type).Scan(&result.ID, &result.Token, &result.OTP, &result.Credential, &result.CreatedAt, &result.Type, &result.RegistrationStatus, &result.DeviceID); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, nil
+			return &result, nil
 		}
 
-		return nil, err
+		return &result, err
 	}
 
 	return &result, nil
@@ -213,17 +213,17 @@ func (i *userManagementRepositoryImplementation) FindOneRegistrationByCredential
 		pq.QuoteIdentifier(umc.Registration.TableName), umc.Registration.CredentialProperty, umc.Registration.UserTypeProperty)
 	stmt, err := i.db.Prepare(query)
 	if err != nil {
-		return nil, err
+		return &result, err
 	}
 
 	defer stmt.Close()
 
 	if err := stmt.QueryRow(credential, umc.SelectedCredential.Type).Scan(&result.ID, &result.Token, &result.OTP, &result.Credential, &result.CreatedAt, &result.Type, &result.RegistrationStatus, &result.DeviceID); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, nil
+			return &result, nil
 		}
 
-		return nil, err
+		return &result, err
 	}
 
 	return &result, nil
@@ -238,22 +238,22 @@ func (i *userManagementRepositoryImplementation) FindOneUser(umc *config.UserMan
 	_, whereClause := lib.UserQueryMaker(credentials)
 
 	// SELECT DISTINCT id, email, username, phone, photo_profile, password FROM <table name> WHERE *credential = $1 OR ... n*
-	query := fmt.Sprintf("SELECT DISTINCT %s as id, %s as email, %s as phone , %s as photo_profile, %s as password, %s FROM %s WHERE %s LIMIT 1", selectedCred.IDProperty, selectedCred.EmailProperty, selectedCred.UsernameProperty, selectedCred.PhoneProperty,
-		selectedCred.PhotoProfileProperty, selectedCred.PasswordProperty, pq.QuoteIdentifier(tableName), whereClause)
+	query := fmt.Sprintf("SELECT DISTINCT %s as id, %s as email, %s as phone , %s as photo_profile, %s as password FROM %s WHERE %s LIMIT 1", selectedCred.IDProperty,
+		selectedCred.EmailProperty, selectedCred.PhoneProperty, selectedCred.PhotoProfileProperty, selectedCred.PasswordProperty, pq.QuoteIdentifier(tableName), whereClause)
 
 	stmt, err := i.db.Prepare(query)
 	if err != nil {
-		return nil, err
+		return &result, err
 	}
 
 	defer stmt.Close()
 
 	if err := stmt.QueryRow(credential).Scan(&result.ID, &result.Email, &result.Username, &result.PhoneNumber, &result.PhotoProfile, &result.Password); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, nil
+			return &result, nil
 		}
 
-		return nil, err
+		return &result, err
 	}
 
 	return &result, nil
@@ -270,13 +270,17 @@ func (i *userManagementRepositoryImplementation) FindUserDevice(umc *config.User
 
 	stmt, err := i.db.Prepare(query)
 	if err != nil {
-		return nil, err
+		return &result, err
 	}
 
 	defer stmt.Close()
 
 	if err := stmt.QueryRow(user_id, device_id).Scan(&result.ID, &result.DeviceID, &result.UserID, &result.UserType); err != nil {
-		return nil, err
+		if err == sql.ErrNoRows {
+			return &result, nil
+		}
+
+		return &result, err
 	}
 
 	return &result, nil
