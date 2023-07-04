@@ -3,6 +3,7 @@ package usermanagement
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/smokers10/infrast/config"
@@ -23,6 +24,10 @@ type userManagementImplementation struct {
 
 // Logout implements contract.UserManagement.
 func (i *userManagementImplementation) Logout(device_id string) (httpStatus int, failure error) {
+	if device_id == "" {
+		return http.StatusBadRequest, fmt.Errorf("device id is empty")
+	}
+
 	if err := i.Repository.DeleteLoginSession(i.UserManagementConfig, device_id); err != nil {
 		return 500, fmt.Errorf("error delete login session : %v", err.Error())
 	}
@@ -32,6 +37,10 @@ func (i *userManagementImplementation) Logout(device_id string) (httpStatus int,
 
 // ForgotPassword implements contract.UserManagement
 func (i *userManagementImplementation) ForgotPassword(credentials string) (tokens string, HTTPStatus int, failure error) {
+	if credentials == "" {
+		return "", http.StatusBadRequest, fmt.Errorf("credential is empty")
+	}
+
 	// check if user exists or not
 	user, err := i.Repository.FindOneUser(i.UserManagementConfig, credentials)
 	if err != nil {
@@ -89,6 +98,18 @@ func (i *userManagementImplementation) ForgotPassword(credentials string) (token
 
 // Login implements contract.UserManagement
 func (i *userManagementImplementation) Login(credential string, password string, device_id string) (user *contract.UserModel, token string, HTTPStatus int, failure error) {
+	if credential == "" {
+		return nil, "", http.StatusBadRequest, fmt.Errorf("credential is empty")
+	}
+
+	if password == "" {
+		return nil, "", http.StatusBadRequest, fmt.Errorf("password is empty")
+	}
+
+	if device_id == "" {
+		return nil, "", http.StatusBadRequest, fmt.Errorf("device id is empty")
+	}
+
 	// check if user exists or not
 	user, err := i.Repository.FindOneUser(i.UserManagementConfig, credential)
 	if err != nil {
@@ -206,6 +227,14 @@ func (i *userManagementImplementation) Login(credential string, password string,
 
 // RegisterNewAccount implements contract.UserManagement
 func (i *userManagementImplementation) RegisterNewAccount(credential string, device_id string) (token string, HTTPStatus int, failure error) {
+	if credential == "" {
+		return "", http.StatusBadRequest, fmt.Errorf("credential is empty")
+	}
+
+	if device_id == "" {
+		return "", http.StatusBadRequest, fmt.Errorf("device id is empty")
+	}
+
 	// check if user exists or not
 	user, err := i.Repository.FindOneUser(i.UserManagementConfig, credential)
 	if err != nil {
@@ -250,6 +279,14 @@ func (i *userManagementImplementation) RegisterNewAccount(credential string, dev
 
 // RegisterVerification implements contract.UserManagement
 func (i *userManagementImplementation) RegisterVerification(token string, otp string) (HTTPStatus int, failure error) {
+	if token == "" {
+		return http.StatusBadRequest, fmt.Errorf("token is empty")
+	}
+
+	if otp == "" {
+		return http.StatusBadRequest, fmt.Errorf("otp id is empty")
+	}
+
 	// find registration data by token
 	reg, err := i.Repository.FindOneRegistration(i.UserManagementConfig, token)
 	if err != nil {
@@ -281,6 +318,14 @@ func (i *userManagementImplementation) RegisterVerification(token string, otp st
 
 // RegistrationBioData implements contract.UserManagement
 func (i *userManagementImplementation) RegistrationBioData(credential string, query *contract.DynamicColumnValue) (user *contract.UserModel, tokens string, HTTPStatus int, failure error) {
+	if credential == "" {
+		return nil, "", http.StatusBadRequest, fmt.Errorf("credential is empty")
+	}
+
+	if query == nil {
+		return nil, "", http.StatusBadRequest, fmt.Errorf("query is empty")
+	}
+
 	// check if user exists or not
 	user, err := i.Repository.FindOneUser(i.UserManagementConfig, credential)
 	if err != nil {
@@ -344,6 +389,26 @@ func (i *userManagementImplementation) RegistrationBioData(credential string, qu
 
 // ResetPassword implements contract.UserManagement
 func (i *userManagementImplementation) ResetPassword(token string, otp string, new_password string, conf_password string) (HTTPStatus int, failure error) {
+	if token == "" {
+		return http.StatusBadRequest, fmt.Errorf("token is empty")
+	}
+
+	if otp == "" {
+		return http.StatusBadRequest, fmt.Errorf("otp is empty")
+	}
+
+	if new_password == "" {
+		return http.StatusBadRequest, fmt.Errorf("new password is empty")
+	}
+
+	if conf_password == "" {
+		return http.StatusBadRequest, fmt.Errorf("confirmation password is empty")
+	}
+
+	if conf_password != new_password {
+		return http.StatusBadRequest, fmt.Errorf("password mismatch")
+	}
+
 	// check if reset password data is exist or not
 	fp, err := i.Repository.FindOneForgotPassword(i.UserManagementConfig, token)
 	if err != nil {
@@ -391,6 +456,14 @@ func (i *userManagementImplementation) ResetPassword(token string, otp string, n
 
 // register new account if credential is an email
 func (i *userManagementImplementation) emailRegistration(credential string, device_id string) (token string, HTTPStatus int, failure error) {
+	if credential == "" {
+		return "", http.StatusBadRequest, fmt.Errorf("credential is empty")
+	}
+
+	if device_id == "" {
+		return "", http.StatusBadRequest, fmt.Errorf("device id is empty")
+	}
+
 	// generate OTP
 	otp, err := i.UUID.GenerateOTP()
 	if err != nil {
@@ -430,6 +503,14 @@ func (i *userManagementImplementation) emailRegistration(credential string, devi
 
 // register new accound if credential is a phone number
 func (i *userManagementImplementation) phoneRegistration(credential string, device_id string) (token string, HTTPStatus int, failure error) {
+	if credential == "" {
+		return "", http.StatusBadRequest, fmt.Errorf("credential is empty")
+	}
+
+	if device_id == "" {
+		return "", http.StatusBadRequest, fmt.Errorf("device id is empty")
+	}
+
 	return "", 500, errors.New("unimplemented")
 }
 
