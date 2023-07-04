@@ -422,7 +422,7 @@ func (i *userManagementImplementation) emailRegistration(credential string, devi
 
 	// send otp over email
 	if err := i.Mailer.Send([]string{i.GeneralConfig.SMTP.Sender}, "Registrasi Akun Baru", template); err != nil {
-		return "", 500, errors.New("failed to send OTP")
+		return "", 500, fmt.Errorf("error send OTP email : %v", err.Error())
 	}
 
 	return regToken, 200, nil
@@ -430,27 +430,6 @@ func (i *userManagementImplementation) emailRegistration(credential string, devi
 
 // register new accound if credential is a phone number
 func (i *userManagementImplementation) phoneRegistration(credential string, device_id string) (token string, HTTPStatus int, failure error) {
-	// generate OTP
-	otp, err := i.UUID.GenerateOTP()
-	if err != nil {
-		return "", 500, err
-	}
-
-	// generate UUID id as registration token
-	regToken, err := i.UUID.MakeIdentifier()
-	if err != nil {
-		return "", 500, fmt.Errorf("error generate token : %v", err.Error())
-	}
-
-	// secure otp
-	secureOTP := i.Encryption.Hash(otp)
-
-	// store registration data
-	if err := i.Repository.CreateRegistration(i.UserManagementConfig, regToken, credential, secureOTP, device_id); err != nil {
-		return "", 500, err
-	}
-
-	// send otp over email
 	return "", 500, errors.New("unimplemented")
 }
 

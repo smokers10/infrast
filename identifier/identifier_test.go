@@ -8,7 +8,7 @@ import (
 
 func TestIdentifier(t *testing.T) {
 	c := config.Configuration{
-		Application: config.Application{Port: ":8080", Secret: "ABSGDAYSTD67"},
+		Application: config.Application{Port: ":8080", Secret: "4S62BZNFXXSZLCRO"},
 	}
 
 	identifier := Identifier(&c)
