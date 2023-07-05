@@ -11,6 +11,10 @@ import (
 	"github.com/smokers10/infrast/lib"
 )
 
+var (
+	currentTime = time.Now().Unix()
+)
+
 type userManagementImplementation struct {
 	UserManagementConfig *config.UserManagementConfig
 	GeneralConfig        *config.Configuration
@@ -480,7 +484,7 @@ func (i *userManagementImplementation) emailRegistration(credential string, devi
 	secureOTP := i.Encryption.Hash(otp)
 
 	// store registration data
-	if err := i.Repository.CreateRegistration(i.UserManagementConfig, regToken, credential, secureOTP, device_id); err != nil {
+	if err := i.Repository.CreateRegistration(i.UserManagementConfig, regToken, credential, secureOTP, device_id, time.Now().Unix()); err != nil {
 		return "", 500, err
 	}
 

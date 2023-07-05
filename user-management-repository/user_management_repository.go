@@ -70,10 +70,10 @@ func (i *userManagementRepositoryImplementation) CreateNewUserDevice(umc *config
 }
 
 // CreateRegistration implements contract.UserManagementRepository.
-func (i *userManagementRepositoryImplementation) CreateRegistration(umc *config.UserManagementConfig, token string, credential string, otp string, device_id string) error {
-	// insert into -registration- (type, token, credential, otp, device_id) VALUES ($1..n)
-	query := fmt.Sprintf("INSERT INTO %s (%s, %s, %s, %s, %s) VALUES ($1, $2, $3, $4, $5)", pq.QuoteIdentifier(umc.Registration.TableName), umc.Registration.UserTypeProperty, umc.Registration.TokenProperty,
-		umc.Registration.CredentialProperty, umc.Registration.OTPProperty, umc.Registration.DeviceIDProperty)
+func (i *userManagementRepositoryImplementation) CreateRegistration(umc *config.UserManagementConfig, token string, credential string, otp string, device_id string, created_at int64) error {
+	// insert into -registration- (type, token, credential, otp, device_id, created_at) VALUES ($1..n)
+	query := fmt.Sprintf("INSERT INTO %s (%s, %s, %s, %s, %s, %s) VALUES ($1, $2, $3, $4, $5, $6)", pq.QuoteIdentifier(umc.Registration.TableName), umc.Registration.UserTypeProperty, umc.Registration.TokenProperty,
+		umc.Registration.CredentialProperty, umc.Registration.OTPProperty, umc.Registration.DeviceIDProperty, umc.Registration.CreatedAtProperty)
 	stmt, err := i.db.Prepare(query)
 	if err != nil {
 		return err
@@ -81,7 +81,7 @@ func (i *userManagementRepositoryImplementation) CreateRegistration(umc *config.
 
 	defer stmt.Close()
 
-	if _, err := stmt.Exec(umc.SelectedCredential.Type, token, credential, otp, device_id); err != nil {
+	if _, err := stmt.Exec(umc.SelectedCredential.Type, token, credential, otp, device_id, created_at); err != nil {
 		return err
 	}
 

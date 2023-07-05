@@ -193,7 +193,7 @@ func TestCreateRegistration(t *testing.T) {
 	t.Run("error on prepare", func(t *testing.T) {
 		mock.ExpectPrepare(query).WillReturnError(fmt.Errorf("error prepare"))
 
-		err := repository.CreateRegistration(&umc, token, credential, otp, device_id)
+		err := repository.CreateRegistration(&umc, token, credential, otp, device_id, time.Now().Unix())
 		assert.NotEmpty(t, err)
 		t.Logf("error : %v", err.Error())
 	})
@@ -202,16 +202,16 @@ func TestCreateRegistration(t *testing.T) {
 		mock.ExpectPrepare(query)
 		mock.ExpectExec(query).WillReturnError(fmt.Errorf("error exec"))
 
-		err := repository.CreateRegistration(&umc, token, credential, otp, device_id)
+		err := repository.CreateRegistration(&umc, token, credential, otp, device_id, time.Now().Unix())
 		assert.NotEmpty(t, err)
 		t.Logf("error : %v", err.Error())
 	})
 
 	t.Run("success operation", func(t *testing.T) {
 		mock.ExpectPrepare(query)
-		mock.ExpectExec(query).WithArgs(umc.SelectedCredential.Type, token, credential, otp, device_id).WillReturnResult(sqlmock.NewResult(1, 1))
+		mock.ExpectExec(query).WithArgs(umc.SelectedCredential.Type, token, credential, otp, device_id, time.Now().Unix()).WillReturnResult(sqlmock.NewResult(1, 1))
 
-		err := repository.CreateRegistration(&umc, token, credential, otp, device_id)
+		err := repository.CreateRegistration(&umc, token, credential, otp, device_id, time.Now().Unix())
 		assert.Empty(t, err)
 	})
 }

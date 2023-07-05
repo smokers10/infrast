@@ -8,7 +8,7 @@ import (
 type UserManagementRepository interface {
 	FindOneUser(user_management_conf *config.UserManagementConfig, credential string) (*UserModel, error)
 
-	CreateRegistration(user_management_conf *config.UserManagementConfig, token string, credential string, otp string, device_id string) error
+	CreateRegistration(user_management_conf *config.UserManagementConfig, token string, credential string, otp string, device_id string, created_at int64) error
 
 	FindOneRegistration(user_management_conf *config.UserManagementConfig, token string) (*RegistrationModel, error)
 
@@ -52,8 +52,8 @@ func (m *UserManagementRepositoryMock) FindOneUser(user_management_conf *config.
 	return args.Get(0).(*UserModel), args.Error(1)
 }
 
-func (m *UserManagementRepositoryMock) CreateRegistration(user_management_conf *config.UserManagementConfig, token string, credential string, otp string, device_id string) error {
-	args := m.Mock.Called(user_management_conf, token, credential, otp, device_id)
+func (m *UserManagementRepositoryMock) CreateRegistration(user_management_conf *config.UserManagementConfig, token string, credential string, otp string, device_id string, created_at int64) error {
+	args := m.Mock.Called(user_management_conf, token, credential, otp, device_id, created_at)
 	return args.Error(0)
 }
 
