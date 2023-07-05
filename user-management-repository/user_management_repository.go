@@ -180,6 +180,8 @@ func (i *userManagementRepositoryImplementation) FindOneLoginSession(umc *config
 // FindOneRegistration implements contract.UserManagementRepository.
 func (i *userManagementRepositoryImplementation) FindOneRegistration(umc *config.UserManagementConfig, token string) (*contract.RegistrationModel, error) {
 	result := contract.RegistrationModel{}
+	var registrationStatusNullable sql.NullString
+
 	// SELECT id, token, otp, credential, created_at, type, registration_status, device_id FROM regigstration WHERE token = $1 AND user_Type $2
 	query := fmt.Sprintf("SELECT %s as id, %s as token, %s as otp, %s as credential, %s as created_at, %s as type, %s as registration_status, %s as device_id FROM %s WHERE %s = $1 AND %s = $2 LIMIT 1",
 		umc.Registration.IDProperty, umc.Registration.TokenProperty, umc.Registration.OTPProperty, umc.Registration.CredentialProperty, umc.Registration.CreatedAtProperty,
@@ -192,12 +194,16 @@ func (i *userManagementRepositoryImplementation) FindOneRegistration(umc *config
 
 	defer stmt.Close()
 
-	if err := stmt.QueryRow(token, umc.SelectedCredential.Type).Scan(&result.ID, &result.Token, &result.OTP, &result.Credential, &result.CreatedAt, &result.Type, &result.RegistrationStatus, &result.DeviceID); err != nil {
+	if err := stmt.QueryRow(token, umc.SelectedCredential.Type).Scan(&result.ID, &result.Token, &result.OTP, &result.Credential, &result.CreatedAt, &result.Type, &registrationStatusNullable, &result.DeviceID); err != nil {
 		if err == sql.ErrNoRows {
 			return &result, nil
 		}
 
 		return &result, err
+	}
+
+	if registrationStatusNullable.Valid {
+		result.RegistrationStatus = registrationStatusNullable.String
 	}
 
 	return &result, nil
