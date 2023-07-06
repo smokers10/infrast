@@ -2,6 +2,7 @@ package usermanagement
 
 import (
 	"errors"
+	"net/http"
 	"testing"
 	"time"
 
@@ -102,6 +103,14 @@ func TestForgotPassword(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 
+	t.Run("empty credential", func(t *testing.T) {
+		token, status, err := userManagement.ForgotPassword("")
+		assert.Empty(t, token)
+		assert.Equal(t, 400, status)
+		assert.NotEmpty(t, err)
+		t.Log(err.Error())
+	})
+
 	t.Run("error find user", func(t *testing.T) {
 		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{}, errors.New("intended error")).Once()
 
@@ -122,13 +131,14 @@ func TestForgotPassword(t *testing.T) {
 		t.Log(err.Error())
 	})
 
-	t.Run("error make identifier", func(t *testing.T) {
+	t.Run("error create RP token", func(t *testing.T) {
 		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{
 			ID:           1,
-			Username:     mock.Anything,
-			Email:        mock.Anything,
-			Password:     mock.Anything,
-			PhotoProfile: mock.Anything,
+			Username:     "username",
+			Email:        "dona@gmail.com",
+			Password:     "2345r4ea",
+			PhotoProfile: "photo/a.jpg",
+			PhoneNumber:  "08112123244",
 		}, nil).Once()
 		mockIdentifier.Mock.On("MakeIdentifier").Return("", errors.New("intended error")).Once()
 
@@ -139,15 +149,16 @@ func TestForgotPassword(t *testing.T) {
 		t.Log(err.Error())
 	})
 
-	t.Run("error make OTP", func(t *testing.T) {
+	t.Run("error generate OTP", func(t *testing.T) {
 		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{
 			ID:           1,
-			Username:     mock.Anything,
-			Email:        mock.Anything,
-			Password:     mock.Anything,
-			PhotoProfile: mock.Anything,
+			Username:     "username",
+			Email:        "dona@gmail.com",
+			Password:     "2345r4ea",
+			PhotoProfile: "photo/a.jpg",
+			PhoneNumber:  "08112123244",
 		}, nil).Once()
-		mockIdentifier.Mock.On("MakeIdentifier").Return("test-token", nil).Once()
+		mockIdentifier.Mock.On("MakeIdentifier").Return("token", nil).Once()
 		mockIdentifier.Mock.On("GenerateOTP").Return("", errors.New("intended error")).Once()
 
 		token, status, err := userManagement.ForgotPassword("dona@gmail.com")
@@ -157,17 +168,18 @@ func TestForgotPassword(t *testing.T) {
 		t.Log(err.Error())
 	})
 
-	t.Run("error store forgot password", func(t *testing.T) {
+	t.Run("error store password", func(t *testing.T) {
 		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{
 			ID:           1,
-			Username:     mock.Anything,
-			Email:        mock.Anything,
-			Password:     mock.Anything,
-			PhotoProfile: mock.Anything,
+			Username:     "username",
+			Email:        "dona@gmail.com",
+			Password:     "2345r4ea",
+			PhotoProfile: "photo/a.jpg",
+			PhoneNumber:  "08112123244",
 		}, nil).Once()
-		mockIdentifier.Mock.On("MakeIdentifier").Return("test-token", nil).Once()
-		mockIdentifier.Mock.On("GenerateOTP").Return("", nil).Once()
-		mockEncryption.Mock.On("Hash", mock.Anything).Return("ABC123").Once()
+		mockIdentifier.Mock.On("MakeIdentifier").Return("token", nil).Once()
+		mockIdentifier.Mock.On("GenerateOTP").Return("OTP", nil).Once()
+		mockEncryption.Mock.On("Hash", mock.Anything).Return("safepw").Once()
 		mockRepository.Mock.On("StoreForgotPassword", &configuration.UserManagement, mock.Anything, mock.Anything, mock.Anything).Return(errors.New("intended error")).Once()
 
 		token, status, err := userManagement.ForgotPassword("dona@gmail.com")
@@ -177,17 +189,38 @@ func TestForgotPassword(t *testing.T) {
 		t.Log(err.Error())
 	})
 
-	t.Run("user has email on its credentials (error template processing)", func(t *testing.T) {
+	t.Run("no email stored", func(t *testing.T) {
 		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{
 			ID:           1,
-			Username:     "donatest@gmail.com",
-			Email:        "dona@gmail.com",
-			Password:     mock.Anything,
-			PhotoProfile: mock.Anything,
+			Username:     "username",
+			Password:     "2345r4ea",
+			PhotoProfile: "photo/a.jpg",
+			PhoneNumber:  "08112123244",
 		}, nil).Once()
-		mockIdentifier.Mock.On("MakeIdentifier").Return("test-token", nil).Once()
-		mockIdentifier.Mock.On("GenerateOTP").Return("this-is-otp", nil).Once()
-		mockEncryption.Mock.On("Hash", mock.Anything).Return("ABC123").Once()
+		mockIdentifier.Mock.On("MakeIdentifier").Return("token", nil).Once()
+		mockIdentifier.Mock.On("GenerateOTP").Return("OTP", nil).Once()
+		mockEncryption.Mock.On("Hash", mock.Anything).Return("safepw").Once()
+		mockRepository.Mock.On("StoreForgotPassword", &configuration.UserManagement, mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
+
+		token, status, err := userManagement.ForgotPassword("dona@gmail.com")
+		assert.Empty(t, token)
+		assert.Equal(t, 400, status)
+		assert.NotEmpty(t, err)
+		t.Log(err.Error())
+	})
+
+	t.Run("error proccess email template", func(t *testing.T) {
+		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{
+			ID:           1,
+			Username:     "username",
+			Email:        "dona@gmail.com",
+			Password:     "2345r4ea",
+			PhotoProfile: "photo/a.jpg",
+			PhoneNumber:  "08112123244",
+		}, nil).Once()
+		mockIdentifier.Mock.On("MakeIdentifier").Return("token", nil).Once()
+		mockIdentifier.Mock.On("GenerateOTP").Return("OTP", nil).Once()
+		mockEncryption.Mock.On("Hash", mock.Anything).Return("safepw").Once()
 		mockRepository.Mock.On("StoreForgotPassword", &configuration.UserManagement, mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
 		mockTemplateProcessor.Mock.On("EmailTemplate", mock.Anything, mock.Anything).Return("", errors.New("intended error")).Once()
 
@@ -198,20 +231,21 @@ func TestForgotPassword(t *testing.T) {
 		t.Log(err.Error())
 	})
 
-	t.Run("user has email on its credentials (error sending email)", func(t *testing.T) {
+	t.Run("error send email", func(t *testing.T) {
 		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{
 			ID:           1,
-			Username:     "donatest@gmail.com",
+			Username:     "username",
 			Email:        "dona@gmail.com",
-			Password:     mock.Anything,
-			PhotoProfile: mock.Anything,
+			Password:     "2345r4ea",
+			PhotoProfile: "photo/a.jpg",
+			PhoneNumber:  "08112123244",
 		}, nil).Once()
-		mockIdentifier.Mock.On("MakeIdentifier").Return("test-token", nil).Once()
-		mockIdentifier.Mock.On("GenerateOTP").Return("this-is-otp", nil).Once()
-		mockEncryption.Mock.On("Hash", mock.Anything).Return("ABC123").Once()
+		mockIdentifier.Mock.On("MakeIdentifier").Return("token", nil).Once()
+		mockIdentifier.Mock.On("GenerateOTP").Return("OTP", nil).Once()
+		mockEncryption.Mock.On("Hash", mock.Anything).Return("safepw").Once()
 		mockRepository.Mock.On("StoreForgotPassword", &configuration.UserManagement, mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
-		mockTemplateProcessor.Mock.On("EmailTemplate", mock.Anything, mock.Anything).Return("", nil).Once()
-		mockMailer.Mock.On("Send", mock.Anything, mock.Anything, mock.Anything).Return(errors.New("inteded error")).Once()
+		mockTemplateProcessor.Mock.On("EmailTemplate", mock.Anything, mock.Anything).Return("template", nil).Once()
+		mockMailer.Mock.On("Send", mock.Anything, mock.Anything, mock.Anything).Return(errors.New("intended error")).Once()
 
 		token, status, err := userManagement.ForgotPassword("dona@gmail.com")
 		assert.Empty(t, token)
@@ -220,45 +254,88 @@ func TestForgotPassword(t *testing.T) {
 		t.Log(err.Error())
 	})
 
-	t.Run("user has phone numer on its credential", func(t *testing.T) {
+	t.Run("success send email", func(t *testing.T) {
 		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{
 			ID:           1,
-			Username:     "donatest",
-			Password:     mock.Anything,
-			PhotoProfile: mock.Anything,
-			PhoneNumber:  "08112123255",
-		}, nil).Once()
-		mockIdentifier.Mock.On("MakeIdentifier").Return("test-token", nil).Once()
-		mockIdentifier.Mock.On("GenerateOTP").Return("this-is-otp", nil).Once()
-		mockEncryption.Mock.On("Hash", mock.Anything).Return("ABC123").Once()
-		mockRepository.Mock.On("StoreForgotPassword", &configuration.UserManagement, mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
-
-		token, status, err := userManagement.ForgotPassword("dona@gmail.com")
-		assert.Empty(t, token)
-		assert.Equal(t, 500, status)
-		assert.NotEmpty(t, err)
-		t.Log(err.Error())
-	})
-
-	t.Run("success forgot password operation", func(t *testing.T) {
-		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{
-			ID:           1,
-			Username:     "donatest@gmail.com",
+			Username:     "username",
 			Email:        "dona@gmail.com",
-			Password:     mock.Anything,
-			PhotoProfile: mock.Anything,
+			Password:     "2345r4ea",
+			PhotoProfile: "photo/a.jpg",
+			PhoneNumber:  "08112123244",
 		}, nil).Once()
-		mockIdentifier.Mock.On("MakeIdentifier").Return("test-token", nil).Once()
-		mockIdentifier.Mock.On("GenerateOTP").Return("this-is-otp", nil).Once()
-		mockEncryption.Mock.On("Hash", mock.Anything).Return("ABC123").Once()
+		mockIdentifier.Mock.On("MakeIdentifier").Return("token", nil).Once()
+		mockIdentifier.Mock.On("GenerateOTP").Return("OTP", nil).Once()
+		mockEncryption.Mock.On("Hash", mock.Anything).Return("safepw").Once()
 		mockRepository.Mock.On("StoreForgotPassword", &configuration.UserManagement, mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
-		mockTemplateProcessor.Mock.On("EmailTemplate", mock.Anything, mock.Anything).Return("", nil).Once()
+		mockTemplateProcessor.Mock.On("EmailTemplate", mock.Anything, mock.Anything).Return("template", nil).Once()
 		mockMailer.Mock.On("Send", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
 
 		token, status, err := userManagement.ForgotPassword("dona@gmail.com")
 		assert.NotEmpty(t, token)
 		assert.Equal(t, 200, status)
-		assert.Empty(t, err)
+		assert.NoError(t, err)
+	})
+
+	t.Run("no phone stored", func(t *testing.T) {
+		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{
+			ID:           1,
+			Username:     "username",
+			Email:        "dona@gmail.com",
+			Password:     "2345r4ea",
+			PhotoProfile: "photo/a.jpg",
+		}, nil).Once()
+		mockIdentifier.Mock.On("MakeIdentifier").Return("token", nil).Once()
+		mockIdentifier.Mock.On("GenerateOTP").Return("OTP", nil).Once()
+		mockEncryption.Mock.On("Hash", mock.Anything).Return("safepw").Once()
+		mockRepository.Mock.On("StoreForgotPassword", &configuration.UserManagement, mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
+
+		token, status, err := userManagement.ForgotPassword("08112123255")
+		assert.Empty(t, token)
+		assert.Equal(t, 400, status)
+		assert.NotEmpty(t, err)
+		t.Log(err.Error())
+	})
+
+	t.Run("error phone checker", func(t *testing.T) {
+		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{
+			ID:           1,
+			Username:     "username",
+			Email:        "dona@gmail.com",
+			PhoneNumber:  "08112123244",
+			Password:     "2345r4ea",
+			PhotoProfile: "photo/a.jpg",
+		}, nil).Once()
+		mockIdentifier.Mock.On("MakeIdentifier").Return("token", nil).Once()
+		mockIdentifier.Mock.On("GenerateOTP").Return("OTP", nil).Once()
+		mockEncryption.Mock.On("Hash", mock.Anything).Return("safepw").Once()
+		mockRepository.Mock.On("StoreForgotPassword", &configuration.UserManagement, mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
+
+		token, status, err := userManagement.ForgotPassword("08112123255")
+		assert.Empty(t, token)
+		assert.Equal(t, 400, status)
+		assert.NotEmpty(t, err)
+		t.Log(err.Error())
+	})
+
+	t.Run("unimplemented WA", func(t *testing.T) {
+		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{
+			ID:           1,
+			Username:     "username",
+			Email:        "dona@gmail.com",
+			PhoneNumber:  "+628112123244",
+			Password:     "2345r4ea",
+			PhotoProfile: "photo/a.jpg",
+		}, nil).Once()
+		mockIdentifier.Mock.On("MakeIdentifier").Return("token", nil).Once()
+		mockIdentifier.Mock.On("GenerateOTP").Return("OTP", nil).Once()
+		mockEncryption.Mock.On("Hash", mock.Anything).Return("safepw").Once()
+		mockRepository.Mock.On("StoreForgotPassword", &configuration.UserManagement, mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
+
+		token, status, err := userManagement.ForgotPassword("+628112123255")
+		assert.Empty(t, token)
+		assert.Equal(t, 500, status)
+		assert.NotEmpty(t, err)
+		t.Log(err.Error())
 	})
 }
 
@@ -708,18 +785,18 @@ func TestLogin(t *testing.T) {
 	})
 }
 
-func TestRegisterNewAccountWithEmail(t *testing.T) {
+func TestRegisterNewAccount(t *testing.T) {
 	userManagement, err := UserManagement(&configuration, &mockRepository, &mockIdentifier, &mockEncryption, &mockJWT, &mockMailer, &mockTemplateProcessor, "Admin")
 	if err != nil {
 		t.Fatal(err.Error())
 	}
 
 	t.Run("error find user", func(t *testing.T) {
-		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{}, errors.New("intended errors")).Once()
+		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{}, errors.New("intended error")).Once()
 
 		token, status, err := userManagement.RegisterNewAccount("dona@gmail.com", mock.Anything)
 		assert.Empty(t, token)
-		assert.Equal(t, 500, status)
+		assert.Equal(t, http.StatusInternalServerError, status)
 		assert.NotEmpty(t, err)
 		t.Log(err.Error())
 	})
@@ -736,7 +813,7 @@ func TestRegisterNewAccountWithEmail(t *testing.T) {
 
 		token, status, err := userManagement.RegisterNewAccount("dona@gmail.com", mock.Anything)
 		assert.Empty(t, token)
-		assert.Equal(t, 401, status)
+		assert.Equal(t, http.StatusUnauthorized, status)
 		assert.NotEmpty(t, err)
 		t.Log(err.Error())
 	})
@@ -747,84 +824,135 @@ func TestRegisterNewAccountWithEmail(t *testing.T) {
 
 		token, status, err := userManagement.RegisterNewAccount("dona@gmail.com", mock.Anything)
 		assert.Empty(t, token)
-		assert.Equal(t, 500, status)
+		assert.Equal(t, http.StatusInternalServerError, status)
 		assert.NotEmpty(t, err)
 		t.Log(err.Error())
 	})
 
-	t.Run("error generate identifier", func(t *testing.T) {
+	t.Run("error generate token", func(t *testing.T) {
 		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{}, nil).Once()
-		mockIdentifier.Mock.On("GenerateOTP").Return("", nil).Once()
+		mockIdentifier.Mock.On("GenerateOTP").Return("123456", nil).Once()
 		mockIdentifier.Mock.On("MakeIdentifier").Return("", errors.New("intended error")).Once()
 
 		token, status, err := userManagement.RegisterNewAccount("dona@gmail.com", mock.Anything)
 		assert.Empty(t, token)
-		assert.Equal(t, 500, status)
+		assert.Equal(t, http.StatusInternalServerError, status)
 		assert.NotEmpty(t, err)
 		t.Log(err.Error())
 	})
 
-	t.Run("error storing registration", func(t *testing.T) {
+	t.Run("error check registration data", func(t *testing.T) {
 		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{}, nil).Once()
-		mockIdentifier.Mock.On("GenerateOTP").Return("", nil).Once()
-		mockIdentifier.Mock.On("MakeIdentifier").Return("", nil).Once()
-		mockEncryption.Mock.On("Hash", mock.Anything).Return("secure-otp").Once()
-		mockRepository.Mock.On("CreateRegistration", &configuration.UserManagement, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(errors.New("intended error")).Once()
+		mockIdentifier.Mock.On("GenerateOTP").Return("123456", nil).Once()
+		mockIdentifier.Mock.On("MakeIdentifier").Return("TOKEN", nil).Once()
+		mockEncryption.Mock.On("Hash", mock.Anything).Return(mock.Anything).Once()
+		mockRepository.Mock.On("FindOneRegistrationByCredential", &configuration.UserManagement, mock.Anything).Return(&contract.RegistrationModel{}, errors.New("intended error")).Once()
 
 		token, status, err := userManagement.RegisterNewAccount("dona@gmail.com", mock.Anything)
 		assert.Empty(t, token)
-		assert.Equal(t, 500, status)
+		assert.Equal(t, http.StatusInternalServerError, status)
 		assert.NotEmpty(t, err)
 		t.Log(err.Error())
 	})
 
-	t.Run("error processing email template", func(t *testing.T) {
+	t.Run("registration data found but error update registration", func(t *testing.T) {
 		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{}, nil).Once()
-		mockIdentifier.Mock.On("GenerateOTP").Return("", nil).Once()
-		mockIdentifier.Mock.On("MakeIdentifier").Return("", nil).Once()
-		mockEncryption.Mock.On("Hash", mock.Anything).Return("secure-otp").Once()
-		mockRepository.Mock.On("CreateRegistration", &configuration.UserManagement, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
-		mockTemplateProcessor.Mock.On("EmailTemplate", mock.Anything, mock.Anything).Return("", errors.New("inteded error")).Once()
+		mockIdentifier.Mock.On("GenerateOTP").Return("123456", nil).Once()
+		mockIdentifier.Mock.On("MakeIdentifier").Return("TOKEN", nil).Once()
+		mockEncryption.Mock.On("Hash", mock.Anything).Return(mock.Anything).Once()
+		mockRepository.Mock.On("FindOneRegistrationByCredential", &configuration.UserManagement, mock.Anything).Return(&contract.RegistrationModel{
+			ID:                 1,
+			Token:              mock.Anything,
+			OTP:                mock.Anything,
+			Credential:         mock.Anything,
+			CreatedAt:          time.Now().Unix(),
+			Type:               mock.Anything,
+			RegistrationStatus: mock.Anything,
+			DeviceID:           mock.Anything,
+		}, nil).Once()
+		mockRepository.Mock.On("UpdateRegistration", &configuration.UserManagement, mock.Anything, mock.Anything,
+			mock.Anything, mock.Anything, mock.Anything).Return(errors.New("intended error")).
+			Once()
 
 		token, status, err := userManagement.RegisterNewAccount("dona@gmail.com", mock.Anything)
 		assert.Empty(t, token)
-		assert.Equal(t, 500, status)
+		assert.Equal(t, http.StatusInternalServerError, status)
 		assert.NotEmpty(t, err)
 		t.Log(err.Error())
 	})
 
-	t.Run("error sending registration email", func(t *testing.T) {
+	t.Run("error create registration data", func(t *testing.T) {
 		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{}, nil).Once()
-		mockIdentifier.Mock.On("GenerateOTP").Return("this-otp", nil).Once()
-		mockIdentifier.Mock.On("MakeIdentifier").Return("", nil).Once()
-		mockEncryption.Mock.On("Hash", mock.Anything).Return("secure-otp").Once()
-		mockRepository.Mock.On("CreateRegistration", &configuration.UserManagement, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
+		mockIdentifier.Mock.On("GenerateOTP").Return("123456", nil).Once()
+		mockIdentifier.Mock.On("MakeIdentifier").Return("TOKEN", nil).Once()
+		mockEncryption.Mock.On("Hash", mock.Anything).Return(mock.Anything).Once()
+		mockRepository.Mock.On("FindOneRegistrationByCredential", &configuration.UserManagement, mock.Anything).Return(&contract.RegistrationModel{}, nil).Once()
+		mockRepository.Mock.On("CreateRegistration", &configuration.UserManagement, mock.Anything, mock.Anything,
+			mock.Anything, mock.Anything, mock.Anything).Return(errors.New("intended error")).
+			Once()
+
+		token, status, err := userManagement.RegisterNewAccount("dona@gmail.com", mock.Anything)
+		assert.Empty(t, token)
+		assert.Equal(t, http.StatusInternalServerError, status)
+		assert.NotEmpty(t, err)
+		t.Log(err.Error())
+	})
+
+	t.Run("error proccess email template", func(t *testing.T) {
+		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{}, nil).Once()
+		mockIdentifier.Mock.On("GenerateOTP").Return("123456", nil).Once()
+		mockIdentifier.Mock.On("MakeIdentifier").Return("TOKEN", nil).Once()
+		mockEncryption.Mock.On("Hash", mock.Anything).Return(mock.Anything).Once()
+		mockRepository.Mock.On("FindOneRegistrationByCredential", &configuration.UserManagement, mock.Anything).Return(&contract.RegistrationModel{}, nil).Once()
+		mockRepository.Mock.On("CreateRegistration", &configuration.UserManagement, mock.Anything, mock.Anything,
+			mock.Anything, mock.Anything, mock.Anything).Return(nil).
+			Once()
+		mockTemplateProcessor.Mock.On("EmailTemplate", mock.Anything, mock.Anything).Return("template", errors.New("intended error")).Once()
+
+		token, status, err := userManagement.RegisterNewAccount("dona@gmail.com", mock.Anything)
+		assert.Empty(t, token)
+		assert.Equal(t, http.StatusInternalServerError, status)
+		assert.NotEmpty(t, err)
+		t.Log(err.Error())
+	})
+
+	t.Run("error send email", func(t *testing.T) {
+		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{}, nil).Once()
+		mockIdentifier.Mock.On("GenerateOTP").Return("123456", nil).Once()
+		mockIdentifier.Mock.On("MakeIdentifier").Return("TOKEN", nil).Once()
+		mockEncryption.Mock.On("Hash", mock.Anything).Return(mock.Anything).Once()
+		mockRepository.Mock.On("FindOneRegistrationByCredential", &configuration.UserManagement, mock.Anything).Return(&contract.RegistrationModel{}, nil).Once()
+		mockRepository.Mock.On("CreateRegistration", &configuration.UserManagement, mock.Anything, mock.Anything,
+			mock.Anything, mock.Anything, mock.Anything).Return(nil).
+			Once()
 		mockTemplateProcessor.Mock.On("EmailTemplate", mock.Anything, mock.Anything).Return("template", nil).Once()
 		mockMailer.Mock.On("Send", mock.Anything, mock.Anything, mock.Anything).Return(errors.New("intended error")).Once()
 
 		token, status, err := userManagement.RegisterNewAccount("dona@gmail.com", mock.Anything)
 		assert.Empty(t, token)
-		assert.Equal(t, 500, status)
+		assert.Equal(t, http.StatusInternalServerError, status)
 		assert.NotEmpty(t, err)
 		t.Log(err.Error())
 	})
 
-	t.Run("success registration operation", func(t *testing.T) {
+	t.Run("success send email", func(t *testing.T) {
 		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{}, nil).Once()
-		mockIdentifier.Mock.On("GenerateOTP").Return("as", nil).Once()
-		mockIdentifier.Mock.On("MakeIdentifier").Return("iuah", nil).Once()
-		mockEncryption.Mock.On("Hash", mock.Anything).Return("secure-otp").Once()
-		mockRepository.Mock.On("CreateRegistration", &configuration.UserManagement, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
-		mockTemplateProcessor.Mock.On("EmailTemplate", mock.Anything, mock.Anything).Return("", nil).Once()
+		mockIdentifier.Mock.On("GenerateOTP").Return("123456", nil).Once()
+		mockIdentifier.Mock.On("MakeIdentifier").Return("TOKEN", nil).Once()
+		mockEncryption.Mock.On("Hash", mock.Anything).Return(mock.Anything).Once()
+		mockRepository.Mock.On("FindOneRegistrationByCredential", &configuration.UserManagement, mock.Anything).Return(&contract.RegistrationModel{}, nil).Once()
+		mockRepository.Mock.On("CreateRegistration", &configuration.UserManagement, mock.Anything, mock.Anything,
+			mock.Anything, mock.Anything, mock.Anything).Return(nil).
+			Once()
+		mockTemplateProcessor.Mock.On("EmailTemplate", mock.Anything, mock.Anything).Return("template", nil).Once()
 		mockMailer.Mock.On("Send", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
 
 		token, status, err := userManagement.RegisterNewAccount("dona@gmail.com", mock.Anything)
 		assert.NotEmpty(t, token)
 		assert.Equal(t, 200, status)
-		assert.Empty(t, err)
+		assert.NoError(t, err)
 	})
 }
-
 func TestRegisterNewAccountWithUncertainCredential(t *testing.T) {
 	userManagement, err := UserManagement(&configuration, &mockRepository, &mockIdentifier, &mockEncryption, &mockJWT, &mockMailer, &mockTemplateProcessor, "Admin")
 	if err != nil {

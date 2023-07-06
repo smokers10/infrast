@@ -15,6 +15,27 @@ type userManagementRepositoryImplementation struct {
 	db *sql.DB
 }
 
+// UpdateRegistration implements contract.UserManagementRepository.
+func (i *userManagementRepositoryImplementation) UpdateRegistration(umc *config.UserManagementConfig, token string, credential string, otp string, device_id string, created_at int64) error {
+	registrationConf := umc.Registration
+	// UPDATE -registration- SET token = $1, credential = $2, otp = $3, device_id = $4, created_at = $5 WHERE credential = $6
+	query := fmt.Sprintf("UPDATE %s SET %s = $1, %s = $2, %s = $3, %s = $4, %s = $5 WHERE %s = $6", pq.QuoteIdentifier(registrationConf.TableName), registrationConf.TokenProperty,
+		registrationConf.CredentialProperty, registrationConf.OTPProperty, registrationConf.DeviceIDProperty, registrationConf.CreatedAtProperty, registrationConf.CredentialProperty)
+
+	stmt, err := i.db.Prepare(query)
+	if err != nil {
+		return err
+	}
+
+	defer stmt.Close()
+
+	if _, err := stmt.Exec(token, credential, otp, device_id, created_at, credential); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // CompleteLoginSession implements contract.UserManagementRepository.
 func (i *userManagementRepositoryImplementation) CompleteLoginSession(umc *config.UserManagementConfig, token string, device_id string, login_at int64) error {
 	// UPDATE <table name> SET token = $1, loged_at = $2 WHERE device_id = %3
@@ -339,7 +360,7 @@ func (i *userManagementRepositoryImplementation) StoreUser(umc *config.UserManag
 
 // UpdateLoginCredential implements contract.UserManagementRepository.
 func (i *userManagementRepositoryImplementation) UpdateLoginCredential(umc *config.UserManagementConfig, device_id string, credential string) error {
-	// UPDATE <table name> SET credential = $1 WHERE device_id = $1
+	// UPDATE -login- SET credential = $1 WHERE device_id = $1
 	query := fmt.Sprintf("UPDATE %s SET %s = $1 WHERE %s = $2", pq.QuoteIdentifier(umc.Login.TableName), umc.Login.CredentialProperty, umc.Login.DeviceIDProperty)
 	stmt, err := i.db.Prepare(query)
 	if err != nil {

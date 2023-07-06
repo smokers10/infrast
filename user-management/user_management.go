@@ -11,10 +11,6 @@ import (
 	"github.com/smokers10/infrast/lib"
 )
 
-var (
-	currentTime = time.Now().Unix()
-)
-
 type userManagementImplementation struct {
 	UserManagementConfig *config.UserManagementConfig
 	GeneralConfig        *config.Configuration
@@ -26,7 +22,7 @@ type userManagementImplementation struct {
 	TemplateProcessor    contract.TemplateProcessor
 }
 
-// Logout implements contract.UserManagement.
+// Logout to delete login session
 func (i *userManagementImplementation) Logout(device_id string) (httpStatus int, failure error) {
 	if device_id == "" {
 		return http.StatusBadRequest, fmt.Errorf("device id is empty")
@@ -39,7 +35,7 @@ func (i *userManagementImplementation) Logout(device_id string) (httpStatus int,
 	return 200, nil
 }
 
-// ForgotPassword implements contract.UserManagement
+// ForgotPassword to send reset password email / message
 func (i *userManagementImplementation) ForgotPassword(credentials string) (tokens string, HTTPStatus int, failure error) {
 	if credentials == "" {
 		return "", http.StatusBadRequest, fmt.Errorf("credential is empty")
@@ -76,8 +72,14 @@ func (i *userManagementImplementation) ForgotPassword(credentials string) (token
 		return "", 500, fmt.Errorf("error store forgot password : %v", err.Error())
 	}
 
-	// send otp via SMTP/EMAIL or WA
-	if user.Email != "" {
+	// check credential type
+	credentialType := lib.CredentialChecker(credentials)
+
+	if credentialType == "email" {
+		if user.Email == "" {
+			return "", 400, fmt.Errorf("email is not registered")
+		}
+
 		data := map[string]interface{}{
 			"reciever": user.Username,
 			"otp":      otp,
@@ -93,8 +95,17 @@ func (i *userManagementImplementation) ForgotPassword(credentials string) (token
 		}
 	}
 
-	if user.PhoneNumber != "" {
-		return "", 500, errors.New("unimplemented functionality")
+	if credentialType == "phone" {
+		if user.PhoneNumber == "" {
+			return "", 400, fmt.Errorf("phone number is not registered")
+		}
+
+		isPhone, err := lib.PhoneChecker(credentials)
+		if err != nil {
+			return "", 400, err
+		}
+
+		return "", 500, fmt.Errorf("isphone : %v - unimplemented can't send message to %s", isPhone, user.PhoneNumber)
 	}
 
 	return token, 200, failure
@@ -239,7 +250,7 @@ func (i *userManagementImplementation) RegisterNewAccount(credential string, dev
 		return "", http.StatusBadRequest, fmt.Errorf("device id is empty")
 	}
 
-	// check if user exists or not
+	// check is already user exists or not
 	user, err := i.Repository.FindOneUser(i.UserManagementConfig, credential)
 	if err != nil {
 		return "", 500, fmt.Errorf("error find one user : %v", err.Error())
@@ -249,32 +260,66 @@ func (i *userManagementImplementation) RegisterNewAccount(credential string, dev
 		return "", 401, fmt.Errorf("user with credential %v already registered", credential)
 	}
 
-	// check credential type
-	credType := lib.CredentialChecker(credential)
+	// generate OTP
+	otp, err := i.UUID.GenerateOTP()
+	if err != nil {
+		return "", 500, err
+	}
 
-	if credType == "email" {
-		if lib.EmailChecker(credential) {
-			token, status, err := i.emailRegistration(credential, device_id)
-			if err != nil {
-				return "", status, err
-			}
-			return token, status, err
+	// generate UUID id as registration token
+	regToken, err := i.UUID.MakeIdentifier()
+	if err != nil {
+		return "", 500, fmt.Errorf("error generate token : %v", err.Error())
+	}
+
+	// secure otp
+	secureOTP := i.Encryption.Hash(otp)
+
+	// check registration data
+	registration, err := i.Repository.FindOneRegistrationByCredential(i.UserManagementConfig, credential)
+	if err != nil {
+		return "", 500, fmt.Errorf("error find one registration by credential : %v", err.Error())
+	}
+
+	// if registration data is found then update if not create new one
+	if *registration != (contract.RegistrationModel{}) {
+		if err := i.Repository.UpdateRegistration(i.UserManagementConfig, regToken, credential, secureOTP, device_id, time.Now().Unix()); err != nil {
+			return "", 500, fmt.Errorf("error update registration : %v", err.Error())
+		}
+	} else {
+		if err := i.Repository.CreateRegistration(i.UserManagementConfig, regToken, credential, secureOTP, device_id, time.Now().Unix()); err != nil {
+			return "", 500, err
 		}
 	}
 
-	if credType == "phone" {
+	// check credential type
+	credentialType := lib.CredentialChecker(credential)
+
+	// send registration email if credetial type is email
+	if credentialType == "email" {
+		if lib.EmailChecker(credential) {
+			err := i.sendEmailRegistration(credential, device_id)
+			if err != nil {
+				return "", 500, err
+			}
+			return regToken, 200, err
+		}
+	}
+
+	// send registration message if credetial type is phone number to whatsapp
+	if credentialType == "phone" {
 		isPhone, err := lib.PhoneChecker(credential)
 		if err != nil {
 			return "", 400, err
 		}
 
 		if isPhone {
-			token, status, err := i.phoneRegistration(credential, device_id)
+			err := i.SendMessageRegistration(credential, device_id)
 			if err != nil {
-				return "", status, err
+				return "", 500, err
 			}
 
-			return token, status, err
+			return "", 500, err
 		}
 	}
 
@@ -459,63 +504,28 @@ func (i *userManagementImplementation) ResetPassword(token string, otp string, n
 }
 
 // register new account if credential is an email
-func (i *userManagementImplementation) emailRegistration(credential string, device_id string) (token string, HTTPStatus int, failure error) {
-	if credential == "" {
-		return "", http.StatusBadRequest, fmt.Errorf("credential is empty")
-	}
-
-	if device_id == "" {
-		return "", http.StatusBadRequest, fmt.Errorf("device id is empty")
-	}
-
-	// generate OTP
-	otp, err := i.UUID.GenerateOTP()
-	if err != nil {
-		return "", 500, err
-	}
-
-	// generate UUID id as registration token
-	regToken, err := i.UUID.MakeIdentifier()
-	if err != nil {
-		return "", 500, fmt.Errorf("error generate token : %v", err.Error())
-	}
-
-	// secure otp
-	secureOTP := i.Encryption.Hash(otp)
-
-	// store registration data
-	if err := i.Repository.CreateRegistration(i.UserManagementConfig, regToken, credential, secureOTP, device_id, time.Now().Unix()); err != nil {
-		return "", 500, err
-	}
-
+func (i *userManagementImplementation) sendEmailRegistration(otp string, credential string) (failure error) {
 	// processing email template
 	data := map[string]interface{}{
 		"otp": otp,
 	}
+
 	template, err := i.TemplateProcessor.EmailTemplate(data, i.UserManagementConfig.Registration.EmailTemplatePath)
 	if err != nil {
-		return "", 500, fmt.Errorf("error processing template : %v", err.Error())
+		return fmt.Errorf("error processing template : %v", err.Error())
 	}
 
 	// send otp over email
 	if err := i.Mailer.Send([]string{credential}, "Registrasi Akun Baru", template); err != nil {
-		return "", 500, fmt.Errorf("error send OTP email : %v", err.Error())
+		return fmt.Errorf("error send OTP email : %v", err.Error())
 	}
 
-	return regToken, 200, nil
+	return nil
 }
 
 // register new accound if credential is a phone number
-func (i *userManagementImplementation) phoneRegistration(credential string, device_id string) (token string, HTTPStatus int, failure error) {
-	if credential == "" {
-		return "", http.StatusBadRequest, fmt.Errorf("credential is empty")
-	}
-
-	if device_id == "" {
-		return "", http.StatusBadRequest, fmt.Errorf("device id is empty")
-	}
-
-	return "", 500, errors.New("unimplemented")
+func (i *userManagementImplementation) SendMessageRegistration(credential string, device_id string) (failure error) {
+	return fmt.Errorf("unimplemented")
 }
 
 func UserManagement(configuration *config.Configuration, repository contract.UserManagementRepository, uuid contract.IdentfierContract, encryption contract.EncryptionContract, jwt contract.JsonWebTokenContract, mailer contract.MailerContract, template_processor contract.TemplateProcessor, user_type string) (contract.UserManagement, error) {

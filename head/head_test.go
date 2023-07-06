@@ -7,11 +7,18 @@ import (
 )
 
 func TestHead(t *testing.T) {
-	head, err := Head().Initialize("config.yaml")
+	head, err := Head("config.yaml")
 	assert.NoError(t, err)
 
-	t.Run("head middleware", func(t *testing.T) {
-		_, err := head.UserManagement("admin")
+	t.Run("check user management", func(t *testing.T) {
+		UM, err := head.UserManagement("admin")
 		assert.NoError(t, err)
+		assert.NotNil(t, UM)
+	})
+
+	t.Run("check middleware", func(t *testing.T) {
+		middleware, err := head.Middleware("admin")
+		assert.NoError(t, err)
+		assert.NotNil(t, middleware)
 	})
 }

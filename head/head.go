@@ -31,11 +31,7 @@ type module struct {
 	Configuration            *config.Configuration
 }
 
-func Head() *module {
-	return &module{}
-}
-
-func (h *module) Initialize(path string) (*module, error) {
+func Head(path string) (*module, error) {
 	art := figure.NewColorFigure("INFRAST", "", "red", true)
 	art.Print()
 	fmt.Printf("CREATED BY : smokers10 \n\n")
@@ -46,7 +42,7 @@ func (h *module) Initialize(path string) (*module, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("Phase 1 OK!\n")
+	fmt.Printf("Phase 1 OK!\n\n")
 
 	fmt.Println("Phase 2 - Prepare Database")
 	database := database.Database(config)
@@ -54,9 +50,9 @@ func (h *module) Initialize(path string) (*module, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error call postgre db : %v", err.Error())
 	}
-	fmt.Printf("Phase 2 OK!\n")
+	fmt.Printf("Phase 2 OK!\n\n")
 
-	fmt.Println("Phase 3 - Preparing Modules")
+	fmt.Println("Phase 3 - Prepare Modules")
 	modules := module{
 		DB:                       database,
 		Encryption:               encryption.Encryption(),
@@ -67,8 +63,7 @@ func (h *module) Initialize(path string) (*module, error) {
 		UserManagementRepository: usermanagementrepository.UserManagementRepository(sql),
 		Configuration:            config,
 	}
-	h = &modules
-	fmt.Printf("Phase 4 OK!\n")
+	fmt.Printf("Phase 4 OK!\n\n")
 
 	fmt.Println("Phase 4 - Table Structure Checking")
 	checkerRepo := tablestructurechecker.TableStructureCheckerRepository(sql)

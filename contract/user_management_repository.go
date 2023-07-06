@@ -14,6 +14,8 @@ type UserManagementRepository interface {
 
 	FindOneRegistrationByCredential(user_management_conf *config.UserManagementConfig, credential string) (*RegistrationModel, error)
 
+	UpdateRegistration(user_management_conf *config.UserManagementConfig, token string, credential string, otp string, device_id string, created_at int64) error
+
 	UpdateStatusRegistration(user_management_conf *config.UserManagementConfig, token string) error
 
 	StoreUser(user_management_conf *config.UserManagementConfig, column string, args ...string) (int, error)
@@ -45,6 +47,11 @@ type UserManagementRepository interface {
 
 type UserManagementRepositoryMock struct {
 	Mock mock.Mock
+}
+
+func (m *UserManagementRepositoryMock) UpdateRegistration(user_management_conf *config.UserManagementConfig, token string, credential string, otp string, device_id string, created_at int64) error {
+	args := m.Mock.Called(user_management_conf, token, credential, otp, device_id, created_at)
+	return args.Error(0)
 }
 
 func (m *UserManagementRepositoryMock) FindOneUser(user_management_conf *config.UserManagementConfig, credential string) (*UserModel, error) {

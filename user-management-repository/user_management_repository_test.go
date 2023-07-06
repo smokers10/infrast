@@ -841,3 +841,45 @@ func TestUpdateUserPassword(t *testing.T) {
 		t.Logf("user password updated successfully")
 	})
 }
+
+func TestUpdateRegistration(t *testing.T) {
+	umc := configuration.UserManagement.Registration
+	db, mock, err := sqlmock.New()
+	assert.NoError(t, err)
+	repository := UserManagementRepository(db)
+
+	token := "token"
+	credential := "credential"
+	otp := "otp"
+	deviceID := "deviceID"
+	createdAt := time.Now().Unix()
+
+	query := fmt.Sprintf("UPDATE %s SET %s = \\$1, %s = \\$2, %s = \\$3, %s = \\$4, %s = \\$5 WHERE %s = \\$6", pq.QuoteIdentifier(umc.TableName), umc.TokenProperty,
+		umc.CredentialProperty, umc.OTPProperty, umc.DeviceIDProperty, umc.CreatedAtProperty, umc.CredentialProperty)
+	t.Logf("query to test : %s", query)
+
+	t.Run("error on prepare", func(t *testing.T) {
+		mock.ExpectPrepare(query).WillReturnError(fmt.Errorf("error prepare"))
+
+		err := repository.UpdateRegistration(&configuration.UserManagement, token, credential, otp, deviceID, createdAt)
+		assert.Error(t, err)
+		t.Logf("error: %v", err.Error())
+	})
+
+	t.Run("error on exec", func(t *testing.T) {
+		mock.ExpectPrepare(query)
+		mock.ExpectExec(query).WillReturnError(fmt.Errorf("error prepare"))
+
+		err := repository.UpdateRegistration(&configuration.UserManagement, token, credential, otp, deviceID, createdAt)
+		assert.Error(t, err)
+		t.Logf("error: %v", err.Error())
+	})
+
+	t.Run("succes operation", func(t *testing.T) {
+		mock.ExpectPrepare(query)
+		mock.ExpectExec(query).WithArgs()
+
+		err := repository.UpdateRegistration(&configuration.UserManagement, token, credential, otp, deviceID, createdAt)
+		assert.Error(t, err)
+	})
+}
