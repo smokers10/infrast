@@ -7,14 +7,13 @@ import (
 )
 
 func TestReader(t *testing.T) {
-	ch := ConfigurationHead()
-	c, err := ch.Read("configuration.yaml")
+	c, err := ConfigurationHead("configuration.yaml")
 	if err != nil {
 		t.Fatalf("error config reader : %v\n", err.Error())
 	}
 
 	t.Run("check resgitered user type list", func(t *testing.T) {
-		RUTL, err := ch.RegisteredUserType()
+		RUTL, err := c.RegisteredUserType()
 		assert.Empty(t, err)
 		for _, v := range RUTL {
 			t.Logf("registered user : %s", v)
@@ -22,13 +21,13 @@ func TestReader(t *testing.T) {
 	})
 
 	t.Run("application", func(t *testing.T) {
-		app := c.Application
+		app := c.Configuration.Application
 		assert.NotEmpty(t, app.Port)
 		assert.NotEmpty(t, app.Secret)
 	})
 
 	t.Run("postgres", func(t *testing.T) {
-		postgres := c.PostgreSQL
+		postgres := c.Configuration.PostgreSQL
 		assert.NotEmpty(t, postgres.ConnectionMaxLifeTime)
 		assert.NotEmpty(t, postgres.DBName)
 		assert.NotEmpty(t, postgres.Host)
@@ -40,7 +39,7 @@ func TestReader(t *testing.T) {
 	})
 
 	t.Run("mongodb", func(t *testing.T) {
-		mongodb := c.MongoDB
+		mongodb := c.Configuration.MongoDB
 		assert.NotEmpty(t, mongodb.DBName)
 		assert.NotEmpty(t, mongodb.MaxIdleConnections)
 		assert.NotEmpty(t, mongodb.MaxPool)
@@ -49,7 +48,7 @@ func TestReader(t *testing.T) {
 	})
 
 	t.Run("smtp", func(t *testing.T) {
-		smtp := c.SMTP
+		smtp := c.Configuration.SMTP
 		assert.NotEmpty(t, smtp.Host)
 		assert.NotEmpty(t, smtp.Password)
 		assert.NotEmpty(t, smtp.Username)
@@ -57,8 +56,19 @@ func TestReader(t *testing.T) {
 		assert.NotEmpty(t, smtp.Sender)
 	})
 
+	t.Run("midtrans", func(t *testing.T) {
+		midtrans := c.Configuration.Midtrans
+		assert.NotEmpty(t, midtrans.ServerKey)
+		assert.NotEmpty(t, midtrans.EnabledPayments)
+		assert.NotEmpty(t, midtrans.IrisKey)
+		assert.NotEmpty(t, midtrans.Environment)
+		for idx, v := range midtrans.EnabledPayments {
+			t.Logf("index %v : %v\n", idx+1, v)
+		}
+	})
+
 	t.Run("user management", func(t *testing.T) {
-		c := c.UserManagement
+		c := c.Configuration.UserManagement
 		assert.NotEmpty(t, c.UserCredential)
 		assert.NotEmpty(t, c.Login)
 		assert.NotEmpty(t, c.Registration)

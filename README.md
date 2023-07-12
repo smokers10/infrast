@@ -1,5 +1,5 @@
 # GO INFRAST!
-A simpler way to setup infrastructure for your golang project!
+A simpler way to setup your golang project!
 
 # Provided Module
 here the module we provided for your project :
@@ -8,9 +8,9 @@ here the module we provided for your project :
 * Identifier
 * JSON Web Token
 * SMTP With Template Processor
-* Payment Gateway (On Progress)
-* Whatsapp (On Progress)
-* Firebase (On Progress)
+* Payment Gateway
+* Whatsapp (coming soon)
+* Firebase (coming soon)
 * User Management With Table Property Checker
 * Middleware
 
@@ -21,35 +21,54 @@ first add go-infrast package to your project, by using this command :
 go get github.com/smokers10/go-infrast
 ```
 ## Step 2 : Configuration
-make YAML file that contain configuration, here the example of configuration file you should make :
+here the example of configuration file you can follow :
 ```
 application :
-  port : ":8000"
-  secret : "172y87f1"
+  port : :8000
+  secret : your-encrypted-secret
 postgres : 
-  host : "localhost"
+  host : localhost
   port : 5432
-  user : "testuser"
-  password : "testpass"
-  db_name : "testdb"
+  user : testuser
+  password : your-encrypted-postgres-password
+  db_name : testdb
   max_open_connections : 1
   max_idle_connections : 2
   connection_max_life_time : 2
 mongodb : 
-  uri : "localhost/bla-bla-bla"
+  uri : your-encrypted-mongo-uri
   max_pool : 10
   min_pool : 5
   max_idle_connections : 2
-  db_name : "testdb"
+  db_name : testdb
 smtp : 
-  host : "localhost"
-  password : "testpass"
-  username : "testuser"
+  host : localhost
+  password : your-encrypted-smtp-password
+  username : testuser
   port : 5432
-  sender : "sender"
+  sender : sender
+midtrans :
+  server_key : your-encrypted-midtrans-server-key
+  iris_key : your-encrypted-midtrans-iris-key
+  enabled_payments : 
+    - bca-klik
+    - bri
+    - gopay
 ```
-### Step 3 : Call Go Infrast!
-here the code example to start using go-infrast : 
+
+<b> WARNING </b>
+Some configuration value need to be encrypted such us:
+- Application secret
+- PostgreSQL password
+- MongoDB URI
+- SMTP password
+- Midtrans server key
+- Midtrans iris key
+
+if you set mentioned config value with plain text it will give you error message, due to how we implement encryption on this package please use our provided tool [enigma](https://github.com/smokers10/enigma) for creating confidential configuration value.
+
+### Step 3 : Initialize Infrast
+here the code example on how to use infrast with fiber framework : 
 ```
 package main
 
@@ -60,7 +79,7 @@ import (
 
 func main() {
 	app := fiber.New()
-	infrast, err := infrast.Head().Initialize("configuration.yaml")
+	infrast, err := infrast.Head("your-yaml-path","your-aes-key")
 	if err != nil {
 		panic(err)
 	}
@@ -71,6 +90,8 @@ func main() {
 }
 
 ```
+<b>Note</b> you can make your own AES key based on [this](https://pkg.go.dev/crypto/aes#pkg-variables) documentation or use auto generated key by [enigma](https://github.com/smokers10/enigma)
+
 # User Management & Middleware
 ## Step 1 : Configuration
 To use user management & middleware you should add more configuration to your YAML file, here the configuration : 
@@ -160,7 +181,7 @@ import (
 
 func main() {
 	app := fiber.New()
-	infrast, err := infrast.Head().Initialize("configuration.yaml")
+	infrast, err := infrast.Head("your-yaml-path", "your-aes-key")
 	if err != nil {
 		panic(err)
 	}

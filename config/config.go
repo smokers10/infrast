@@ -13,11 +13,19 @@ type configurationHead struct {
 	RegisteredUserTypeList []string
 }
 
-func ConfigurationHead() *configurationHead {
-	return &configurationHead{}
+func ConfigurationHead(path string) (*configurationHead, error) {
+	ch := configurationHead{}
+	c, err := ch.read(path)
+	if err != nil {
+		return nil, err
+	}
+
+	ch.Configuration = c
+
+	return &ch, nil
 }
 
-func (ch *configurationHead) Read(path string) (*Configuration, error) {
+func (ch *configurationHead) read(path string) (*Configuration, error) {
 	result := Configuration{}
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -37,7 +45,6 @@ func (ch *configurationHead) Read(path string) (*Configuration, error) {
 	return &result, nil
 }
 
-// prepare user credential
 func (ch *configurationHead) prepareUserCredential(userCredentials []UserCredential) (results []UserCredential) {
 	for _, v := range userCredentials {
 		UCTemp := UserCredential{

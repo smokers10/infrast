@@ -43,3 +43,18 @@ func TestJsonWebToken(t *testing.T) {
 		assert.Equal(t, time.Now().AddDate(0, 0, 7).Unix(), int64(p["iat"].(float64)))
 	})
 }
+
+func TestParsing(t *testing.T) {
+	c := config.Configuration{
+		Application: config.Application{
+			Port:   ":8000",
+			Secret: "abcdefg",
+		},
+	}
+
+	jwt := JsonWebToken(&c)
+
+	_, err := jwt.ParseToken("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.cThIIoDvwdueQB468K5xDc5633seEFoqwxjF_xSJyQQ")
+	assert.Error(t, err)
+	t.Logf("error : %s", err.Error())
+}

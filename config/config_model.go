@@ -101,10 +101,18 @@ type UserDeviceConfig struct {
 	EmailTemplatePath string `yaml:"email_template_path"`
 }
 
+type Midtrans struct {
+	ServerKey       string   `yaml:"server_key"`
+	IrisKey         string   `yaml:"iris_key"`
+	Environment     string   `yaml:"environment"`
+	EnabledPayments []string `yaml:"enabled_payments"`
+}
+
 type Configuration struct {
 	Application    Application          `yaml:"application"`
 	PostgreSQL     PostgresConfig       `yaml:"postgres"`
 	MongoDB        MongoDBConfig        `yaml:"mongodb"`
 	SMTP           SMTPConfig           `yaml:"smtp"`
+	Midtrans       Midtrans             `yaml:"midtrans"`
 	UserManagement UserManagementConfig `yaml:"user_management"`
 }

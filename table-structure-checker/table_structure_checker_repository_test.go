@@ -13,12 +13,13 @@ func TestStructureGetter(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
 	repository := TableStructureCheckerRepository(db)
-	query := "select column_name, data_type from INFORMATION_SCHEMA.COLUMNS where table_name = \\$1"
+	tablename := "mytable"
+	query := fmt.Sprintf(`SELECT column_name, data_type FROM INFORMATION_SCHEMA.COLUMNS where table_name = '%s'`, tablename)
 
 	t.Run("error on prepare", func(t *testing.T) {
 		mock.ExpectPrepare(query).WillReturnError(fmt.Errorf("error prepare"))
 
-		_, err := repository.StructureGetter("nan")
+		_, err := repository.StructureGetter("mytable")
 		assert.Error(t, err)
 		t.Logf("error : %v", err.Error())
 	})
@@ -27,7 +28,7 @@ func TestStructureGetter(t *testing.T) {
 		mock.ExpectPrepare(query)
 		mock.ExpectQuery(query).WillReturnError(fmt.Errorf("error query"))
 
-		_, err := repository.StructureGetter("nan")
+		_, err := repository.StructureGetter("mytable")
 		assert.Error(t, err)
 		t.Logf("error : %v", err.Error())
 	})

@@ -8,13 +8,12 @@ import (
 )
 
 func TestMailer(t *testing.T) {
-	ch := config.ConfigurationHead()
-	c, err := ch.Read("config.yaml")
+	c, err := config.ConfigurationHead("config.yaml")
 	if err != nil {
 		t.Fatalf("Error config reader : %v\n", err.Error())
 	}
 
-	smtp := Mailer(c)
+	smtp := Mailer(c.Configuration)
 
 	err = smtp.Send([]string{"lpiexecutive@gmail.com"}, "good morning!", "hey good morning budy!")
 	assert.Empty(t, err)

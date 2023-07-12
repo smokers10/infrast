@@ -14,6 +14,8 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 )
 
+require github.com/midtrans/midtrans-go v1.3.6 // indirect
+
 require (
 	github.com/andybalholm/brotli v1.0.5 // indirect
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be

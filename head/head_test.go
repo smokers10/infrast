@@ -7,8 +7,16 @@ import (
 )
 
 func TestHead(t *testing.T) {
-	head, err := Head("config.yaml")
+	head, err := Head("config.yaml", "first-man-of-war")
 	assert.NoError(t, err)
+
+	c := head.Configuration
+	t.Logf("application secret : %s", c.Application.Secret)
+	t.Logf("postgres password : %s", c.PostgreSQL.Password)
+	t.Logf("mongodb uri : %s", c.MongoDB.URI)
+	t.Logf("smtp password : %s", c.SMTP.Password)
+	t.Logf("midtrans server key : %s", c.Midtrans.ServerKey)
+	t.Logf("midtrans iris key : %s", c.Midtrans.IrisKey)
 
 	t.Run("check user management", func(t *testing.T) {
 		UM, err := head.UserManagement("admin")

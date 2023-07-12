@@ -12,7 +12,7 @@ import (
 
 func TestLoginStructureChecker(t *testing.T) {
 	mockRepository := contract.TableStructureCheckerRepositoryMock{Mock: mock.Mock{}}
-	configuration, err := config.ConfigurationHead().Read("dummy_config/login.yaml")
+	ch, err := config.ConfigurationHead("dummy_config/login.yaml")
 	assert.NoError(t, err)
 	checker := TableStructureChecker(&mockRepository)
 
@@ -24,7 +24,7 @@ func TestLoginStructureChecker(t *testing.T) {
 		}
 		mockRepository.Mock.On("StructureGetter", mock.Anything).Return(columnsMatch, nil).Once()
 
-		result, err := checker.StructureChecker(&configuration.UserManagement)
+		result, err := checker.StructureChecker(&ch.Configuration.UserManagement)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, result)
 		lib.CheckResultLogFormat(result)
@@ -56,7 +56,7 @@ func TestLoginStructureChecker(t *testing.T) {
 		}
 		mockRepository.Mock.On("StructureGetter", mock.Anything).Return(columnsMatch, nil).Once()
 
-		result, err := checker.StructureChecker(&configuration.UserManagement)
+		result, err := checker.StructureChecker(&ch.Configuration.UserManagement)
 		assert.NoError(t, err)
 		assert.Empty(t, result)
 		lib.CheckResultLogFormat(result)
@@ -65,7 +65,7 @@ func TestLoginStructureChecker(t *testing.T) {
 
 func TestRegistrationStructureChecker(t *testing.T) {
 	mockRepository := contract.TableStructureCheckerRepositoryMock{Mock: mock.Mock{}}
-	configuration, err := config.ConfigurationHead().Read("dummy_config/registration.yaml")
+	ch, err := config.ConfigurationHead("dummy_config/login.yaml")
 	assert.NoError(t, err)
 	checker := TableStructureChecker(&mockRepository)
 
@@ -77,7 +77,7 @@ func TestRegistrationStructureChecker(t *testing.T) {
 		}
 		mockRepository.Mock.On("StructureGetter", mock.Anything).Return(columnsMatch, nil).Once()
 
-		result, err := checker.StructureChecker(&configuration.UserManagement)
+		result, err := checker.StructureChecker(&ch.Configuration.UserManagement)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, result)
 		lib.CheckResultLogFormat(result)
@@ -96,7 +96,7 @@ func TestRegistrationStructureChecker(t *testing.T) {
 		}
 		mockRepository.Mock.On("StructureGetter", mock.Anything).Return(columnsMatch, nil).Once()
 
-		result, err := checker.StructureChecker(&configuration.UserManagement)
+		result, err := checker.StructureChecker(&ch.Configuration.UserManagement)
 		assert.NoError(t, err)
 		assert.Empty(t, result)
 		lib.CheckResultLogFormat(result)
@@ -105,7 +105,7 @@ func TestRegistrationStructureChecker(t *testing.T) {
 
 func TestResetPasswordStructureChecker(t *testing.T) {
 	mockRepository := contract.TableStructureCheckerRepositoryMock{Mock: mock.Mock{}}
-	configuration, err := config.ConfigurationHead().Read("dummy_config/reset_password.yaml")
+	ch, err := config.ConfigurationHead("dummy_config/login.yaml")
 	assert.NoError(t, err)
 	checker := TableStructureChecker(&mockRepository)
 
@@ -117,7 +117,7 @@ func TestResetPasswordStructureChecker(t *testing.T) {
 		}
 		mockRepository.Mock.On("StructureGetter", mock.Anything).Return(columnsMatch, nil).Once()
 
-		result, err := checker.StructureChecker(&configuration.UserManagement)
+		result, err := checker.StructureChecker(&ch.Configuration.UserManagement)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, result)
 		lib.CheckResultLogFormat(result)
@@ -134,7 +134,7 @@ func TestResetPasswordStructureChecker(t *testing.T) {
 		}
 		mockRepository.Mock.On("StructureGetter", mock.Anything).Return(columnsMatch, nil).Once()
 
-		result, err := checker.StructureChecker(&configuration.UserManagement)
+		result, err := checker.StructureChecker(&ch.Configuration.UserManagement)
 		assert.NoError(t, err)
 		assert.Empty(t, result)
 		lib.CheckResultLogFormat(result)
@@ -143,7 +143,7 @@ func TestResetPasswordStructureChecker(t *testing.T) {
 
 func TestUserCredentialStructureChecker(t *testing.T) {
 	mockRepository := contract.TableStructureCheckerRepositoryMock{Mock: mock.Mock{}}
-	configuration, err := config.ConfigurationHead().Read("dummy_config/user_Credential.yaml")
+	configuration, err := config.ConfigurationHead("dummy_config/user_Credential.yaml")
 	assert.NoError(t, err)
 	checker := TableStructureChecker(&mockRepository)
 
@@ -155,7 +155,7 @@ func TestUserCredentialStructureChecker(t *testing.T) {
 		}
 		mockRepository.Mock.On("StructureGetter", mock.Anything).Return(columnsMatch, nil).Once()
 
-		result, err := checker.StructureChecker(&configuration.UserManagement)
+		result, err := checker.StructureChecker(&configuration.Configuration.UserManagement)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, result)
 		lib.CheckResultLogFormat(result)
@@ -172,7 +172,7 @@ func TestUserCredentialStructureChecker(t *testing.T) {
 		}
 		mockRepository.Mock.On("StructureGetter", mock.Anything).Return(columnsMatch, nil).Once()
 
-		result, err := checker.StructureChecker(&configuration.UserManagement)
+		result, err := checker.StructureChecker(&configuration.Configuration.UserManagement)
 		assert.NoError(t, err)
 		assert.Empty(t, result)
 		lib.CheckResultLogFormat(result)
@@ -181,7 +181,7 @@ func TestUserCredentialStructureChecker(t *testing.T) {
 
 func TestUserDeviceChecker(t *testing.T) {
 	mockRepository := contract.TableStructureCheckerRepositoryMock{Mock: mock.Mock{}}
-	configuration, err := config.ConfigurationHead().Read("dummy_config/user_device.yaml")
+	ch, err := config.ConfigurationHead("dummy_config/user_device.yaml")
 	assert.NoError(t, err)
 	checker := TableStructureChecker(&mockRepository)
 
@@ -193,7 +193,7 @@ func TestUserDeviceChecker(t *testing.T) {
 		}
 		mockRepository.Mock.On("StructureGetter", mock.Anything).Return(columnsMatch, nil).Once()
 
-		result, err := checker.StructureChecker(&configuration.UserManagement)
+		result, err := checker.StructureChecker(&ch.Configuration.UserManagement)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, result)
 		lib.CheckResultLogFormat(result)
@@ -208,7 +208,7 @@ func TestUserDeviceChecker(t *testing.T) {
 		}
 		mockRepository.Mock.On("StructureGetter", mock.Anything).Return(columnsMatch, nil).Once()
 
-		result, err := checker.StructureChecker(&configuration.UserManagement)
+		result, err := checker.StructureChecker(&ch.Configuration.UserManagement)
 		assert.NoError(t, err)
 		assert.Empty(t, result)
 		lib.CheckResultLogFormat(result)
