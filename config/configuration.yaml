@@ -30,6 +30,12 @@ midtrans :
     - bca-klik
     - bri
     - gopay
+whatsapp :
+  sid : wa-sid
+  auth_token : encrypted-auth-token
+  sender : +628<...>
+firebase : 
+  service_account_key : your-encrypted-service-account-key
 user_management :
   user_credential : [
     {

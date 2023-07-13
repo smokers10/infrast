@@ -108,11 +108,23 @@ type Midtrans struct {
 	EnabledPayments []string `yaml:"enabled_payments"`
 }
 
+type Whatsapp struct {
+	SID       string `yaml:"sid"`
+	AuthToken string `yaml:"auth_token"`
+	Sender    string `yaml:"sender"`
+}
+
+type Firebase struct {
+	ServiceAccountKey string `yaml:"service_account_key"`
+}
+
 type Configuration struct {
 	Application    Application          `yaml:"application"`
 	PostgreSQL     PostgresConfig       `yaml:"postgres"`
 	MongoDB        MongoDBConfig        `yaml:"mongodb"`
 	SMTP           SMTPConfig           `yaml:"smtp"`
 	Midtrans       Midtrans             `yaml:"midtrans"`
+	Whatsapp       Whatsapp             `yaml:"whatsapp"`
+	Firebase       Firebase             `yaml:"firebase"`
 	UserManagement UserManagementConfig `yaml:"user_management"`
 }

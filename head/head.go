@@ -9,6 +9,7 @@ import (
 	"github.com/smokers10/infrast/contract"
 	"github.com/smokers10/infrast/database"
 	"github.com/smokers10/infrast/encryption"
+	"github.com/smokers10/infrast/firebase"
 	"github.com/smokers10/infrast/identifier"
 	"github.com/smokers10/infrast/jsonwebtoken"
 	"github.com/smokers10/infrast/lib"
@@ -19,6 +20,7 @@ import (
 	templateprocessor "github.com/smokers10/infrast/template-processor"
 	usermanagement "github.com/smokers10/infrast/user-management"
 	usermanagementrepository "github.com/smokers10/infrast/user-management-repository"
+	"github.com/smokers10/infrast/whatsapp"
 )
 
 type module struct {
@@ -30,6 +32,8 @@ type module struct {
 	TemplateProcessor        contract.TemplateProcessor
 	UserManagementRepository contract.UserManagementRepository
 	Midtrans                 contract.Midtrans
+	Whatsapp                 contract.Whatsapp
+	Firebase                 contract.Firebase
 	Configuration            *config.Configuration
 }
 
@@ -53,7 +57,7 @@ func Head(path string, encryption_key string) (*module, error) {
 	if c.Application.Secret != "" {
 		secret, err := encryption.Decrypt(c.Application.Secret)
 		if err != nil {
-			return nil, fmt.Errorf("error to read smtp password : %v", err.Error())
+			return nil, fmt.Errorf("error to read smtp password (plaintext not allowed): %v", err.Error())
 		}
 		c.Application.Secret = string(secret)
 	}
@@ -61,7 +65,7 @@ func Head(path string, encryption_key string) (*module, error) {
 	if c.PostgreSQL.Password != "" {
 		postgresPassword, err := encryption.Decrypt(c.PostgreSQL.Password)
 		if err != nil {
-			return nil, fmt.Errorf("error to read postgre password : %v", err.Error())
+			return nil, fmt.Errorf("error to read postgre password (plaintext not allowed): %v", err.Error())
 		}
 		c.PostgreSQL.Password = string(postgresPassword)
 	}
@@ -69,7 +73,7 @@ func Head(path string, encryption_key string) (*module, error) {
 	if c.MongoDB.URI != "" {
 		mongodbURI, err := encryption.Decrypt(c.MongoDB.URI)
 		if err != nil {
-			return nil, fmt.Errorf("error to read mongodb uri : %v", err.Error())
+			return nil, fmt.Errorf("error to read mongodb uri (plaintext not allowed): %v", err.Error())
 		}
 
 		c.MongoDB.URI = string(mongodbURI)
@@ -78,7 +82,7 @@ func Head(path string, encryption_key string) (*module, error) {
 	if c.SMTP.Password != "" {
 		smtpPassword, err := encryption.Decrypt(c.SMTP.Password)
 		if err != nil {
-			return nil, fmt.Errorf("error to read smtp password : %v", err.Error())
+			return nil, fmt.Errorf("error to read smtp password (plaintext not allowed): %v", err.Error())
 		}
 		c.SMTP.Password = string(smtpPassword)
 	}
@@ -86,7 +90,7 @@ func Head(path string, encryption_key string) (*module, error) {
 	if c.Midtrans.ServerKey != "" {
 		midtransServerKey, err := encryption.Decrypt(c.Midtrans.ServerKey)
 		if err != nil {
-			return nil, fmt.Errorf("error to read midtrans server key : %v", err.Error())
+			return nil, fmt.Errorf("error to read midtrans server key (plaintext not allowed): %v", err.Error())
 		}
 		c.Midtrans.ServerKey = string(midtransServerKey)
 	}
@@ -94,9 +98,25 @@ func Head(path string, encryption_key string) (*module, error) {
 	if c.Midtrans.IrisKey != "" {
 		irisKey, err := encryption.Decrypt(c.Midtrans.IrisKey)
 		if err != nil {
-			return nil, fmt.Errorf("error to read midtrans iris key : %v", err.Error())
+			return nil, fmt.Errorf("error to read midtrans iris key (plaintext not allowed): %v", err.Error())
 		}
 		c.Midtrans.IrisKey = string(irisKey)
+	}
+
+	if c.Whatsapp.AuthToken != "" {
+		authToken, err := encryption.Decrypt(c.Whatsapp.AuthToken)
+		if err != nil {
+			return nil, fmt.Errorf("error to read whatsapp auth token (plaintext not allowed): %v", err.Error())
+		}
+		c.Whatsapp.AuthToken = authToken
+	}
+
+	if c.Firebase.ServiceAccountKey != "" {
+		sak, err := encryption.Decrypt(c.Firebase.ServiceAccountKey)
+		if err != nil {
+			return nil, fmt.Errorf("error to read whatsapp auth token (plaintext not allowed): %v", err.Error())
+		}
+		c.Firebase.ServiceAccountKey = sak
 	}
 
 	database := database.Database(c)
@@ -110,6 +130,16 @@ func Head(path string, encryption_key string) (*module, error) {
 		return nil, fmt.Errorf("error midtrans : %v", err.Error())
 	}
 
+	whatsapp, err := whatsapp.Whatsapp(c)
+	if err != nil {
+		return nil, fmt.Errorf("error whatsapp : %v", err.Error())
+	}
+
+	firebase, err := firebase.Firebase(c)
+	if err != nil {
+		return nil, fmt.Errorf("error whatsapp : %v", err.Error())
+	}
+
 	modules := module{
 		DB:                       database,
 		Encryption:               encryption,
@@ -119,6 +149,8 @@ func Head(path string, encryption_key string) (*module, error) {
 		TemplateProcessor:        templateprocessor.TemplateProccessor(),
 		UserManagementRepository: usermanagementrepository.UserManagementRepository(sql),
 		Midtrans:                 midtrans,
+		Whatsapp:                 whatsapp,
+		Firebase:                 firebase,
 		Configuration:            c,
 	}
 

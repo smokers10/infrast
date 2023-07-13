@@ -2,7 +2,8 @@ package config
 
 import (
 	"errors"
-	"io/ioutil"
+	"io"
+	"os"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -27,7 +28,14 @@ func ConfigurationHead(path string) (*configurationHead, error) {
 
 func (ch *configurationHead) read(path string) (*Configuration, error) {
 	result := Configuration{}
-	data, err := ioutil.ReadFile(path)
+
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	data, err := io.ReadAll(file)
 	if err != nil {
 		return nil, err
 	}
@@ -36,10 +44,8 @@ func (ch *configurationHead) read(path string) (*Configuration, error) {
 		return nil, err
 	}
 
-	// prepare user credential
 	result.UserManagement.UserCredential = ch.prepareUserCredential(result.UserManagement.UserCredential)
 
-	// assign result to method struct
 	ch.Configuration = &result
 
 	return &result, nil

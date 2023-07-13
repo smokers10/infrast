@@ -9,8 +9,8 @@ here the module we provided for your project :
 * JSON Web Token
 * SMTP With Template Processor
 * Payment Gateway
-* Whatsapp (coming soon)
-* Firebase (coming soon)
+* Whatsapp
+* Firebase
 * User Management With Table Property Checker
 * Middleware
 
@@ -54,6 +54,12 @@ midtrans :
     - bca-klik
     - bri
     - gopay
+whatsapp :
+  sid : wa-sid
+  auth_token : encrypted-auth-token
+  sender : +628<...>
+firebase : 
+  service_account_key : your-encrypted-service-account-key
 ```
 
 <b> WARNING </b>
@@ -64,6 +70,8 @@ Some configuration value need to be encrypted such us:
 - SMTP password
 - Midtrans server key
 - Midtrans iris key
+- Whatsapp auth token
+- Firebase service account key
 
 if you set mentioned config value with plain text it will give you error message, due to how we implement encryption on this package please use our provided tool [enigma](https://github.com/smokers10/enigma) for creating confidential configuration value.
 
@@ -79,7 +87,10 @@ import (
 
 func main() {
 	app := fiber.New()
-	infrast, err := infrast.Head("your-yaml-path","your-aes-key")
+  key := os.GetEnv("aes-key-env-name")
+  path := os.GetEnv("your-yaml-path")
+
+	infrast, err := infrast.Head(path, key)
 	if err != nil {
 		panic(err)
 	}
@@ -222,9 +233,11 @@ The following packages were used in this project :
 - crypto - [Repository / Package Page](golang.org/x/crypto)
 - yaml - [Repository / Package Page](gopkg.in/yaml.v3)
 - midtrans go - [Repository / Package Page](github.com/midtrans/midtrans-go)
+- twillio go - [Repository / Package Page](github.com/twilio/twilio-go)
+- firebase - [Repository / Package Page](firebase.google.com/go)
 - and many more
 
-# Author
+# Author & Contributor
 
 Nadzar Mutaqin - [instagram](https://www.instagram.com/vermillione666/) - [linkedin](https://www.linkedin.com/in/nadzar-mutaqin-178a8b153/) - nadzarmutaqin4@gmail.com
 

@@ -67,6 +67,18 @@ func TestReader(t *testing.T) {
 		}
 	})
 
+	t.Run("whatsapp", func(t *testing.T) {
+		whatsapp := c.Configuration.Whatsapp
+		assert.NotEmpty(t, whatsapp.SID)
+		assert.NotEmpty(t, whatsapp.AuthToken)
+		assert.NotEmpty(t, whatsapp.Sender)
+	})
+
+	t.Run("firebase", func(t *testing.T) {
+		firebase := c.Configuration.Firebase
+		assert.NotEmpty(t, firebase.ServiceAccountKey)
+	})
+
 	t.Run("user management", func(t *testing.T) {
 		c := c.Configuration.UserManagement
 		assert.NotEmpty(t, c.UserCredential)

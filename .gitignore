@@ -3,3 +3,5 @@ docker-for-test/pgdata
 mailer/config.yaml
 head/config.yaml
 encryption/configuration.yaml
+firebase/config.yaml
+firebase/service-key.json
