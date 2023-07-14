@@ -37,7 +37,9 @@ func (i *firebaseImpl) SendMulticastMessage(data *messaging.MulticastMessage) er
 	}
 	log.Printf("Success count : %v", response.SuccessCount)
 	log.Printf("Failure count : %v", response.FailureCount)
-	log.Printf("Response : %v", response.Responses)
+	for _, v := range response.Responses {
+		log.Printf("is success : %v\nerror : %v\nmessage id : %v \n\n", v.Success, v.Error, v.MessageID)
+	}
 
 	return nil
 }

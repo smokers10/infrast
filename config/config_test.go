@@ -147,5 +147,13 @@ func TestReader(t *testing.T) {
 			assert.NotEmpty(t, c.UserDevice.UserTypeProperty)
 			assert.NotEmpty(t, c.UserDevice.EmailTemplatePath)
 		})
+
+		t.Run("User FCM token", func(t *testing.T) {
+			assert.NotEmpty(t, c.UserFCMToken.IDProperty)
+			assert.NotEmpty(t, c.UserFCMToken.TableName)
+			assert.NotEmpty(t, c.UserFCMToken.TimestampProperty)
+			assert.NotEmpty(t, c.UserFCMToken.TokenProperty)
+			assert.NotEmpty(t, c.UserFCMToken.UserTypeProperty)
+		})
 	})
 }

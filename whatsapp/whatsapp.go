@@ -40,7 +40,6 @@ func Whatsapp(config *config.Configuration) (contract.Whatsapp, error) {
 	}
 
 	clientParams := twilio.ClientParams{
-		Username:   "ghost ops",
 		AccountSid: wconfig.SID,
 		Password:   wconfig.AuthToken,
 	}

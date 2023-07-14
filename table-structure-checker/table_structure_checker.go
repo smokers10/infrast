@@ -61,6 +61,13 @@ func (i *tableStructureCheckerImplementation) StructureChecker(umc *config.UserM
 			}
 		}
 
+		if tableName == umc.UserFCMToken.TableName {
+			userFCMCheck := userFCMCheck(column, &umc.UserFCMToken)
+			if len(userFCMCheck) != 0 {
+				dump.Mismatch = append(dump.Mismatch, userFCMCheck...)
+			}
+		}
+
 		if len(dump.Mismatch) != 0 {
 			result = append(result, dump)
 			dump = contract.CheckResult{}
@@ -72,7 +79,6 @@ func (i *tableStructureCheckerImplementation) StructureChecker(umc *config.UserM
 
 // func to give table to check dynamicaly
 func tableToCheck(umc *config.UserManagementConfig) []string {
-	// get every table name defined on config YAML
 	tableToCheck := []string{}
 
 	if umc.Login.TableName != "" {
@@ -89,6 +95,10 @@ func tableToCheck(umc *config.UserManagementConfig) []string {
 
 	if umc.UserDevice.TableName != "" {
 		tableToCheck = append(tableToCheck, umc.UserDevice.TableName)
+	}
+
+	if umc.UserFCMToken.TableName != "" {
+		tableToCheck = append(tableToCheck, umc.UserFCMToken.TableName)
 	}
 
 	if len(umc.UserCredential) != 0 {
@@ -289,6 +299,33 @@ func userDeviceCheck(columns []contract.Column, userDeviceConfig *config.UserDev
 
 	// check UserTypeProperty
 	if UserTypeProperty := isMatch(columns, userDeviceConfig.UserTypeProperty); UserTypeProperty != "" {
+		listMismatch = append(listMismatch, UserTypeProperty)
+	}
+
+	return listMismatch
+}
+
+// func to check user device table property
+func userFCMCheck(columns []contract.Column, userFCMConfig *config.UserFCMTokenConfig) []string {
+	listMismatch := []string{}
+
+	// check IDProperty
+	if IDProperty := isMatch(columns, userFCMConfig.IDProperty); IDProperty != "" {
+		listMismatch = append(listMismatch, IDProperty)
+	}
+
+	// check TokenProperty
+	if TokenProperty := isMatch(columns, userFCMConfig.TokenProperty); TokenProperty != "" {
+		listMismatch = append(listMismatch, TokenProperty)
+	}
+
+	// check TimestampProperty
+	if TimestampProperty := isMatch(columns, userFCMConfig.TimestampProperty); TimestampProperty != "" {
+		listMismatch = append(listMismatch, TimestampProperty)
+	}
+
+	// check UserTypeProperty
+	if UserTypeProperty := isMatch(columns, userFCMConfig.UserTypeProperty); UserTypeProperty != "" {
 		listMismatch = append(listMismatch, UserTypeProperty)
 	}
 

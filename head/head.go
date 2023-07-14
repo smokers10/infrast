@@ -48,6 +48,7 @@ func Head(path string, encryption_key string) (*module, error) {
 	}
 	c := ch.Configuration
 
+	// get confidential information
 	key := []byte(encryption_key)
 	encryption, err := encryption.Encryption(key)
 	if err != nil {
@@ -119,6 +120,7 @@ func Head(path string, encryption_key string) (*module, error) {
 		c.Firebase.ServiceAccountKey = sak
 	}
 
+	// prepare module
 	database := database.Database(c)
 	sql, err := database.PosgresSQL()
 	if err != nil {
@@ -154,6 +156,7 @@ func Head(path string, encryption_key string) (*module, error) {
 		Configuration:            c,
 	}
 
+	// User management table structur check
 	checkerRepo := tablestructurechecker.TableStructureCheckerRepository(sql)
 	checker := tablestructurechecker.TableStructureChecker(checkerRepo)
 	checkResult, err := checker.StructureChecker(&c.UserManagement)

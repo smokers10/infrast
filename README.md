@@ -4,17 +4,17 @@ A simpler way to setup your golang project!
 # Provided Module
 here the module we provided for your project :
 * Database (Postgre & Mongo)
-* Encryption 
+* Encryption
 * Identifier
 * JSON Web Token
 * SMTP With Template Processor
 * Payment Gateway
 * Whatsapp
 * Firebase
-* User Management With Table Property Checker
+* User Management
 * Middleware
 
-# Basic Usage
+# How To Use
 ## Step 1 : Installation
 first add go-infrast package to your project, by using this command :
 ```
@@ -75,6 +75,16 @@ Some configuration value need to be encrypted such us:
 
 if you set mentioned config value with plain text it will give you error message, due to how we implement encryption on this package please use our provided tool [enigma](https://github.com/smokers10/enigma) for creating confidential configuration value.
 
+<b> How To Setup Firebase </b> <br>
+As you can see the configuration required firebase service account key, to get that information please follow this instruction
+
+1. Go to your firebase console then go to `project setting`.
+2. Select `service account` tab.
+3. On `firebase admin SDK` click `Generate new private key` button, it will show you modal pop up click `Generate Key` you will download a JSON file from firebase console.
+4. After you downloaded the JSON, open the file and then encode all information inside using base64, you use [this](https://www.base64decode.org/) site to encode your private key.
+5. encrypt your encoded private key using [enigma](https://github.com/smokers10/enigma).
+6. Set encrypted private key to your configuration YAML.
+
 ### Step 3 : Initialize Infrast
 here the code example on how to use infrast with fiber framework : 
 ```
@@ -86,9 +96,9 @@ import (
 )
 
 func main() {
-	app := fiber.New()
-  key := os.GetEnv("aes-key-env-name")
-  path := os.GetEnv("your-yaml-path")
+    app := fiber.New()
+    key := os.GetEnv("aes-key-env-name")
+    path := os.GetEnv("your-yaml-path")
 
 	infrast, err := infrast.Head(path, key)
 	if err != nil {
@@ -171,6 +181,12 @@ user_management :
     created_at_property : "created_at"
     validity_duration : 900000
     email_template_path : "template/forgot-password.html"
+    user_type_property : "user_type"
+  user_fcm_token :
+    table_name : "user_fcm"
+    id_property : "id"
+    token_property : "token"
+    timestamp_property : "timestamp"
     user_type_property : "user_type"
 ```
 as you can see from yaml above you should have following table on your system <br>

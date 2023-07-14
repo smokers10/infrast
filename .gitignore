@@ -5,3 +5,4 @@ head/config.yaml
 encryption/configuration.yaml
 firebase/config.yaml
 firebase/service-key.json
+firebase/fcm_registration_tokens.yaml

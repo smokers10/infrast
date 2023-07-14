@@ -38,6 +38,7 @@ type UserManagementConfig struct {
 	Registration       RegistrationConfig  `yaml:"registration"`
 	ResetPassword      ResetPasswordConfig `yaml:"reset_password"`
 	UserDevice         UserDeviceConfig    `yaml:"user_device"`
+	UserFCMToken       UserFCMTokenConfig  `yaml:"user_fcm_token"`
 	SelectedCredential UserCredential
 }
 
@@ -78,6 +79,14 @@ type RegistrationConfig struct {
 	DeviceIDProperty           string `yaml:"device_id_property"`
 	UserTypeProperty           string `yaml:"user_type_property"`
 	CreatedAtProperty          string `yaml:"created_at_property"`
+}
+
+type UserFCMTokenConfig struct {
+	TableName         string `yaml:"table_name"`
+	IDProperty        string `yaml:"id_property"`
+	TokenProperty     string `yaml:"token_property"`
+	TimestampProperty string `yaml:"timestamp_property"`
+	UserTypeProperty  string `yaml:"user_type_property"`
 }
 
 type ResetPasswordConfig struct {

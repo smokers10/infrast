@@ -5,7 +5,6 @@ import (
 
 	"github.com/smokers10/infrast/config"
 	"github.com/smokers10/infrast/contract"
-	"github.com/smokers10/infrast/lib"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -27,7 +26,6 @@ func TestLoginStructureChecker(t *testing.T) {
 		result, err := checker.StructureChecker(&ch.Configuration.UserManagement)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, result)
-		lib.CheckResultLogFormat(result)
 	})
 
 	t.Run("match", func(t *testing.T) {
@@ -59,13 +57,12 @@ func TestLoginStructureChecker(t *testing.T) {
 		result, err := checker.StructureChecker(&ch.Configuration.UserManagement)
 		assert.NoError(t, err)
 		assert.Empty(t, result)
-		lib.CheckResultLogFormat(result)
 	})
 }
 
 func TestRegistrationStructureChecker(t *testing.T) {
 	mockRepository := contract.TableStructureCheckerRepositoryMock{Mock: mock.Mock{}}
-	ch, err := config.ConfigurationHead("dummy_config/login.yaml")
+	ch, err := config.ConfigurationHead("dummy_config/registration.yaml")
 	assert.NoError(t, err)
 	checker := TableStructureChecker(&mockRepository)
 
@@ -80,7 +77,6 @@ func TestRegistrationStructureChecker(t *testing.T) {
 		result, err := checker.StructureChecker(&ch.Configuration.UserManagement)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, result)
-		lib.CheckResultLogFormat(result)
 	})
 
 	t.Run("match", func(t *testing.T) {
@@ -99,13 +95,12 @@ func TestRegistrationStructureChecker(t *testing.T) {
 		result, err := checker.StructureChecker(&ch.Configuration.UserManagement)
 		assert.NoError(t, err)
 		assert.Empty(t, result)
-		lib.CheckResultLogFormat(result)
 	})
 }
 
 func TestResetPasswordStructureChecker(t *testing.T) {
 	mockRepository := contract.TableStructureCheckerRepositoryMock{Mock: mock.Mock{}}
-	ch, err := config.ConfigurationHead("dummy_config/login.yaml")
+	ch, err := config.ConfigurationHead("dummy_config/reset_password.yaml")
 	assert.NoError(t, err)
 	checker := TableStructureChecker(&mockRepository)
 
@@ -120,7 +115,6 @@ func TestResetPasswordStructureChecker(t *testing.T) {
 		result, err := checker.StructureChecker(&ch.Configuration.UserManagement)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, result)
-		lib.CheckResultLogFormat(result)
 	})
 
 	t.Run("match", func(t *testing.T) {
@@ -137,13 +131,12 @@ func TestResetPasswordStructureChecker(t *testing.T) {
 		result, err := checker.StructureChecker(&ch.Configuration.UserManagement)
 		assert.NoError(t, err)
 		assert.Empty(t, result)
-		lib.CheckResultLogFormat(result)
 	})
 }
 
 func TestUserCredentialStructureChecker(t *testing.T) {
 	mockRepository := contract.TableStructureCheckerRepositoryMock{Mock: mock.Mock{}}
-	configuration, err := config.ConfigurationHead("dummy_config/user_Credential.yaml")
+	configuration, err := config.ConfigurationHead("dummy_config/user_credential.yaml")
 	assert.NoError(t, err)
 	checker := TableStructureChecker(&mockRepository)
 
@@ -158,7 +151,6 @@ func TestUserCredentialStructureChecker(t *testing.T) {
 		result, err := checker.StructureChecker(&configuration.Configuration.UserManagement)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, result)
-		lib.CheckResultLogFormat(result)
 	})
 
 	t.Run("match", func(t *testing.T) {
@@ -175,7 +167,40 @@ func TestUserCredentialStructureChecker(t *testing.T) {
 		result, err := checker.StructureChecker(&configuration.Configuration.UserManagement)
 		assert.NoError(t, err)
 		assert.Empty(t, result)
-		lib.CheckResultLogFormat(result)
+	})
+}
+
+func TestUserFCMTokenStructureChecker(t *testing.T) {
+	mockRepository := contract.TableStructureCheckerRepositoryMock{Mock: mock.Mock{}}
+	configuration, err := config.ConfigurationHead("dummy_config/user_fcm_token.yaml")
+	assert.NoError(t, err)
+	checker := TableStructureChecker(&mockRepository)
+
+	t.Run("match", func(t *testing.T) {
+		columnsMatch := []contract.Column{
+			{
+				Field: "mismatch",
+			},
+		}
+		mockRepository.Mock.On("StructureGetter", mock.Anything).Return(columnsMatch, nil).Once()
+
+		result, err := checker.StructureChecker(&configuration.Configuration.UserManagement)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, result)
+	})
+
+	t.Run("match", func(t *testing.T) {
+		columnsMatch := []contract.Column{
+			{Field: "id"},
+			{Field: "token"},
+			{Field: "timestamp"},
+			{Field: "user_type"},
+		}
+		mockRepository.Mock.On("StructureGetter", mock.Anything).Return(columnsMatch, nil).Once()
+
+		result, err := checker.StructureChecker(&configuration.Configuration.UserManagement)
+		assert.NoError(t, err)
+		assert.Empty(t, result)
 	})
 }
 
@@ -196,7 +221,6 @@ func TestUserDeviceChecker(t *testing.T) {
 		result, err := checker.StructureChecker(&ch.Configuration.UserManagement)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, result)
-		lib.CheckResultLogFormat(result)
 	})
 
 	t.Run("match", func(t *testing.T) {
@@ -211,6 +235,5 @@ func TestUserDeviceChecker(t *testing.T) {
 		result, err := checker.StructureChecker(&ch.Configuration.UserManagement)
 		assert.NoError(t, err)
 		assert.Empty(t, result)
-		lib.CheckResultLogFormat(result)
 	})
 }
