@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/smokers10/infrast/config"
@@ -42,12 +43,24 @@ func (i *MiddlewareImpl) Authenticate(token string, device_id string) (*contract
 			Message:         "authentication error",
 			Status:          500,
 			IsAuthenticated: false,
-			Reason:          err.Error(),
+			Reason:          "broken authentication token",
 		}, fmt.Errorf("error : %v", err.Error())
 	}
 
 	types := payload["type"].(string)
 	userID := payload["user_id"].(int)
+	eat := payload["eat"].(int64)
+
+	// check token lifespand
+	currentTime := time.Now().UTC().Unix()
+	if currentTime > eat {
+		return &contract.MiddlewareResponse{
+			Message:         "unauthenticated access",
+			Status:          401,
+			IsAuthenticated: false,
+			Reason:          "authtentication token is expired",
+		}, fmt.Errorf("required header is empty (token & device id)")
+	}
 
 	// match the roles type from YAML with payload["type"]
 	if i.UMC.SelectedCredential.Type != types {
@@ -87,7 +100,7 @@ func (i *MiddlewareImpl) Authenticate(token string, device_id string) (*contract
 			Message:         "internal server error",
 			Status:          500,
 			IsAuthenticated: false,
-			Reason:          err.Error(),
+			Reason:          "broken login session",
 		}, fmt.Errorf("error find login session : %v", err.Error())
 	}
 

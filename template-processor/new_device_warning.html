@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Forgot Password</title>
+  <title>Security Warning</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -31,13 +31,11 @@
 </head>
 <body>
   <div class="container">
-    <h1>Atur Ulang Kata Sandi</h1>
-    <p>Hallo,{{.reciever}}</p>
-    <p>Anda baru saja meminta untuk atur ulang kata sandi. Silahkan gunakan OTP berikut untuk mengatur ulang kata sandi :</p>
-    <p class="otp">{{.otp}}</p>
-    <p>biarkan jika Anda tidak merasa meminta request ini</p>
-    <p>Salam hangat</p>
-    <p>LPI Apps</p>
+    <h1>Security Warning</h1>
+    <p>We detect your account is logged from another device at {{.logged_at}}, please klick URL bellow to log out</p>
+    <p class="otp">{{.logout_url}}</p>
+    <p>ignore this message if you think your account on right device</p>
+    <p>Best Regards,<br>Infrast Team</p>
   </div>
 </body>
 </html>

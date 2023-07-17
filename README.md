@@ -76,7 +76,7 @@ Some configuration value need to be encrypted such us:
 if you set mentioned config value with plain text it will give you error message, due to how we implement encryption on this package please use our provided tool [enigma](https://github.com/smokers10/enigma) for creating confidential configuration value.
 
 <b> How To Setup Firebase </b> <br>
-As you can see the configuration required firebase service account key, to get that information please follow this instruction
+As you can see the firebase configuration required firebase service account key, to get key please follow this instruction
 
 1. Go to your firebase console then go to `project setting`.
 2. Select `service account` tab.
@@ -118,6 +118,14 @@ func main() {
 To use user management & middleware you should add more configuration to your YAML file, here the configuration : 
 ```
 user_management :
+  message_template : 
+    new_registration_email_template_path : template/new-registration.html
+    new_device_warning_email_template_path : template/new-device.html
+    forgot_password_email_template_path : template/forgot-passwrod.html
+    new_registration_message_template : your registration otp is %v please don't share to anybody
+    new_device_warning_message_template : you logged on another device klick URL bellow to log out %v
+    forgot_password_message_template : your reset password otp is %v please don't share to anybody
+    login_cancelation_url : http://localhost:8000/cancel-login/%s
   user_credential : [
     {
       type : "ADMIN",

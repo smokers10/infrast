@@ -12,7 +12,7 @@ type WhatsappMock struct {
 	Mock mock.Mock
 }
 
-func (m *WhatsappMock) SendMessage(message string) error {
+func (m *WhatsappMock) SendMessage(message string, to string) error {
 	args := m.Mock.Called(message)
 	return args.Error(0)
 }

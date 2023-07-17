@@ -15,12 +15,181 @@ type userManagementRepositoryImplementation struct {
 	db *sql.DB
 }
 
-// UpdateRegistration implements contract.UserManagementRepository.
+func (i *userManagementRepositoryImplementation) GetUserCredentials(umc *config.UserManagementConfig, user_id int) (*contract.UserModel, error) {
+	// SELECT id, email, phone FROM <user table> WHERE id = $1
+	result := contract.UserModel{}
+	conf := umc.SelectedCredential
+	query := fmt.Sprintf("SELECT %s as id, %s as email, %s as phone FROM %s WHERE %s = $1", conf.IDProperty, conf.EmailProperty, conf.PhoneProperty, pq.QuoteIdentifier(conf.UserTable), conf.IDProperty)
+	stmt, err := i.db.Prepare(query)
+	if err != nil {
+		return &contract.UserModel{}, err
+	}
+
+	defer stmt.Close()
+
+	if err := stmt.QueryRow(user_id).Scan(&result.ID, &result.Email, &result.PhoneNumber); err != nil {
+		if err == sql.ErrNoRows {
+			return &contract.UserModel{}, nil
+		}
+
+		return &contract.UserModel{}, err
+	}
+
+	return &result, nil
+}
+
+func (i *userManagementRepositoryImplementation) UpdateJWTToken(umc *config.UserManagementConfig, token string, device_id string) error {
+	// UPDATE login SET token = $1 WHERE device_id = $2
+	loginConf := umc.Login
+	query := fmt.Sprintf("UPDATE %s SET %s = $1 WHERE %s = $2", pq.QuoteIdentifier(loginConf.TableName), loginConf.TokenProperty, loginConf.DeviceIDProperty)
+	stmt, err := i.db.Prepare(query)
+	if err != nil {
+		return err
+	}
+
+	defer stmt.Close()
+
+	if _, err := stmt.Exec(token, device_id); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (i *userManagementRepositoryImplementation) UpdateUserPasswordByUserID(umc *config.UserManagementConfig, new_password string, user_id int) error {
+	// UPDATE <user table name> SET password = $1 WHERE id = $2
+	credConf := umc.SelectedCredential
+	query := fmt.Sprintf("UPDATE %s SET %s = $1 WHERE %s = $2", pq.QuoteIdentifier(credConf.UserTable), credConf.PasswordProperty, credConf.IDProperty)
+	stmt, err := i.db.Prepare(query)
+	if err != nil {
+		return err
+	}
+
+	defer stmt.Close()
+
+	if _, err := stmt.Exec(new_password, user_id); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (i *userManagementRepositoryImplementation) FindOneUserByID(umc *config.UserManagementConfig, user_id int) (*contract.UserModel, error) {
+	// SELECT id, email, username, phone, photo_profile, password FROM <user table name> WHERE id = $1
+	credConf := umc.SelectedCredential
+	user := contract.UserModel{}
+	query := fmt.Sprintf("SELECT %s as id, %s as email, %s as username, %s as phone, %s as photo_profile, %s as password FROM %s WHERE %s = $1", credConf.IDProperty,
+		credConf.EmailProperty, credConf.UsernameProperty, credConf.PhoneProperty, credConf.PhotoProfileProperty, credConf.PasswordProperty, pq.QuoteIdentifier(credConf.UserTable),
+		credConf.IDProperty)
+	stmt, err := i.db.Prepare(query)
+	if err != nil {
+		return &contract.UserModel{}, err
+	}
+
+	defer stmt.Close()
+
+	if err := stmt.QueryRow(user_id).Scan(&user.ID, &user.Email, &user.Username, &user.PhoneNumber, &user.PhotoProfile, &user.Password); err != nil {
+		if err == sql.ErrNoRows {
+			return &contract.UserModel{}, nil
+		}
+
+		return &contract.UserModel{}, err
+	}
+
+	return &user, nil
+}
+
+func (i *userManagementRepositoryImplementation) UpdateCredential(umc *config.UserManagementConfig, new_credential string, user_id int, credential_property string) error {
+	// UPDATE <user table name> SET <credential property> = $1 WHERE user_id = $2
+	credConf := umc.SelectedCredential
+	query := fmt.Sprintf("UPDATE %s SET %s = $1 WHERE %s = $2", pq.QuoteIdentifier(credConf.UserTable), credential_property, credConf.IDProperty)
+	stmt, err := i.db.Prepare(query)
+	if err != nil {
+		return err
+	}
+
+	defer stmt.Close()
+
+	if _, err := stmt.Exec(new_credential, user_id); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (i *userManagementRepositoryImplementation) GetFCMToken(umc *config.UserManagementConfig, user_id int) (*contract.UserFCMTokenModel, error) {
+	// SELECT id, token, timestamp, user_type, user_id FROM user_fcm_token WHERE user_id = $1
+	result := contract.UserFCMTokenModel{}
+	conf := umc.UserFCMToken
+	query := fmt.Sprintf("SELECT %s as id, %s as token, %s as timestamp, %s as user_type, %s as user_id FROM %s WHERE %s = $1", conf.IDProperty, conf.TokenProperty,
+		conf.TimestampProperty, conf.UserTypeProperty, conf.UserIDProperty, pq.QuoteIdentifier(conf.TableName), conf.UserIDProperty)
+	stmt, err := i.db.Prepare(query)
+	if err != nil {
+		return &contract.UserFCMTokenModel{}, err
+	}
+
+	defer stmt.Close()
+
+	if err := stmt.QueryRow(user_id).Scan(&result.ID, &result.Token, &result.Timestamp, &result.UserType, &result.UserID); err != nil {
+		if err == sql.ErrNoRows {
+			return &contract.UserFCMTokenModel{}, nil
+		}
+
+		return &contract.UserFCMTokenModel{}, err
+	}
+
+	return &result, nil
+}
+
+func (i *userManagementRepositoryImplementation) StoreFCMToken(umc *config.UserManagementConfig, token string, timestamp int64, user_id int) error {
+	// INSERT INTO user_fcm_token (token, timestamp, user_type, user_id)  VALUES($1..$n)
+	conf := umc.UserFCMToken
+	uType := umc.SelectedCredential.Type
+
+	query := fmt.Sprintf("INSERT INTO %s (%s, %s, %s, %s) VALUES ($1, $2, $3, $4)", pq.QuoteIdentifier(conf.TableName), conf.TokenProperty, conf.TimestampProperty,
+		conf.UserTypeProperty, conf.UserIDProperty)
+	stmt, err := i.db.Prepare(query)
+	if err != nil {
+		return err
+	}
+
+	defer stmt.Close()
+
+	if _, err := stmt.Exec(token, timestamp, uType, user_id); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (i *userManagementRepositoryImplementation) UpdateFCMToken(umc *config.UserManagementConfig, token string, timestamp int64, user_id int) error {
+	// UPDATE user_fcm_token SET token = $1, timestamp = $2 WHERE user_id = $3
+	conf := umc.UserFCMToken
+	query := fmt.Sprintf("UPDATE %s SET %s = $1, %s = $2 WHERE %s = $3", pq.QuoteIdentifier(conf.TableName), conf.TokenProperty, conf.TimestampProperty, conf.UserIDProperty)
+	stmt, err := i.db.Prepare(query)
+	if err != nil {
+		return err
+	}
+
+	defer stmt.Close()
+
+	if _, err := stmt.Exec(token, timestamp, user_id); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (i *userManagementRepositoryImplementation) UpdateRegistration(umc *config.UserManagementConfig, token string, credential string, otp string, device_id string, created_at int64) error {
 	registrationConf := umc.Registration
-	// UPDATE -registration- SET token = $1, credential = $2, otp = $3, device_id = $4, created_at = $5 WHERE credential = $6
-	query := fmt.Sprintf("UPDATE %s SET %s = $1, %s = $2, %s = $3, %s = $4, %s = $5 WHERE %s = $6", pq.QuoteIdentifier(registrationConf.TableName), registrationConf.TokenProperty,
-		registrationConf.CredentialProperty, registrationConf.OTPProperty, registrationConf.DeviceIDProperty, registrationConf.CreatedAtProperty, registrationConf.CredentialProperty)
+	// UPDATE registration SET token = $1, credential = $2, otp = $3, device_id = $4, created_at = $5 WHERE credential = $6
+	query := fmt.Sprintf("UPDATE %s SET %s = $1, %s = $2, %s = $3, %s = $4, %s = $5 WHERE %s = $6", pq.QuoteIdentifier(registrationConf.TableName),
+		registrationConf.TokenProperty,
+		registrationConf.CredentialProperty,
+		registrationConf.OTPProperty,
+		registrationConf.DeviceIDProperty,
+		registrationConf.CreatedAtProperty,
+		registrationConf.CredentialProperty)
 
 	stmt, err := i.db.Prepare(query)
 	if err != nil {
@@ -36,7 +205,6 @@ func (i *userManagementRepositoryImplementation) UpdateRegistration(umc *config.
 	return nil
 }
 
-// CompleteLoginSession implements contract.UserManagementRepository.
 func (i *userManagementRepositoryImplementation) CompleteLoginSession(umc *config.UserManagementConfig, token string, device_id string, login_at int64) error {
 	// UPDATE <table name> SET token = $1, loged_at = $2 WHERE device_id = %3
 	query := fmt.Sprintf("UPDATE %s SET %s = $1, %s = $2 WHERE %s = $3", pq.QuoteIdentifier(umc.Login.TableName), umc.Login.TokenProperty, umc.Login.LoginAtProperty, umc.Login.DeviceIDProperty)
@@ -54,7 +222,6 @@ func (i *userManagementRepositoryImplementation) CompleteLoginSession(umc *confi
 	return nil
 }
 
-// CreateNewLoginSession implements contract.UserManagementRepository.
 func (i *userManagementRepositoryImplementation) CreateNewLoginSession(umc *config.UserManagementConfig, credential string, device_id string) error {
 	// insert into -login- (type, credential, device_id) VALUES ($1..$n)
 	query := fmt.Sprintf("INSERT INTO %s (%s, %s, %s) VALUES ($1, $2, $3)", pq.QuoteIdentifier(umc.Login.TableName), umc.Login.TypeProperty, umc.Login.CredentialProperty, umc.Login.DeviceIDProperty)
@@ -72,7 +239,6 @@ func (i *userManagementRepositoryImplementation) CreateNewLoginSession(umc *conf
 	return nil
 }
 
-// CreateNewUserDevice implements contract.UserManagementRepository.
 func (i *userManagementRepositoryImplementation) CreateNewUserDevice(umc *config.UserManagementConfig, user_id int, device_id string) error {
 	// insert info -user device- (device_id, user_id, user_type) VALUES ($1..$n)
 	query := fmt.Sprintf("INSERT INTO %s (%s, %s, %s) VALUES ($1, $2, $3)", pq.QuoteIdentifier(umc.UserDevice.TableName), umc.UserDevice.DeviceIDProperty, umc.UserDevice.UserIDProperty, umc.UserDevice.UserTypeProperty)
@@ -90,7 +256,6 @@ func (i *userManagementRepositoryImplementation) CreateNewUserDevice(umc *config
 	return nil
 }
 
-// CreateRegistration implements contract.UserManagementRepository.
 func (i *userManagementRepositoryImplementation) CreateRegistration(umc *config.UserManagementConfig, token string, credential string, otp string, device_id string, created_at int64) error {
 	// insert into -registration- (type, token, credential, otp, device_id, created_at) VALUES ($1..n)
 	query := fmt.Sprintf("INSERT INTO %s (%s, %s, %s, %s, %s, %s) VALUES ($1, $2, $3, $4, $5, $6)", pq.QuoteIdentifier(umc.Registration.TableName), umc.Registration.UserTypeProperty, umc.Registration.TokenProperty,
@@ -109,7 +274,6 @@ func (i *userManagementRepositoryImplementation) CreateRegistration(umc *config.
 	return nil
 }
 
-// DeleteForgotPassword implements contract.UserManagementRepository.
 func (i *userManagementRepositoryImplementation) DeleteForgotPassword(umc *config.UserManagementConfig, token string) error {
 	// DELETE FROM -forgot_password- WHERE token = $1 AND user_type = $2
 	query := fmt.Sprintf("DELETE FROM %v WHERE %s = $1 AND %s = $2", pq.QuoteIdentifier(umc.ResetPassword.TableName), umc.ResetPassword.TokenProperty, umc.ResetPassword.UserTypeProperty)
@@ -127,7 +291,6 @@ func (i *userManagementRepositoryImplementation) DeleteForgotPassword(umc *confi
 	return nil
 }
 
-// DeleteLoginSession implements contract.UserManagementRepository.
 func (i *userManagementRepositoryImplementation) DeleteLoginSession(umc *config.UserManagementConfig, device_id string) error {
 	// DELETE FROM -login- WHERE device_id = $1 AND user_type = $1
 	query := fmt.Sprintf("DELETE FROM %s WHERE %s = $1 AND %s = $2", pq.QuoteIdentifier(umc.Login.TableName), umc.Login.DeviceIDProperty, umc.Login.TypeProperty)
@@ -145,7 +308,6 @@ func (i *userManagementRepositoryImplementation) DeleteLoginSession(umc *config.
 	return nil
 }
 
-// FindOneForgotPassword implements contract.UserManagementRepository.
 func (i *userManagementRepositoryImplementation) FindOneForgotPassword(umc *config.UserManagementConfig, token string) (*contract.ForgotPasswordModel, error) {
 	result := contract.ForgotPasswordModel{}
 	// SELECT id, token, otp, credential, created_at FROM <table name> WHERE token = $1 AND user_type = $2 LIMIT 1
@@ -171,7 +333,6 @@ func (i *userManagementRepositoryImplementation) FindOneForgotPassword(umc *conf
 	return &result, nil
 }
 
-// FindOneLoginSession implements contract.UserManagementRepository.
 func (i *userManagementRepositoryImplementation) FindOneLoginSession(umc *config.UserManagementConfig, device_id string) (*contract.LoginModel, error) {
 	result := contract.LoginModel{}
 	// SELECT id, token, credential, type, logged_at, attempted_at, failed_attempt FROM <table name> WHERE device_id = $1 AND user_type = $2
@@ -198,7 +359,6 @@ func (i *userManagementRepositoryImplementation) FindOneLoginSession(umc *config
 	return &result, nil
 }
 
-// FindOneRegistration implements contract.UserManagementRepository.
 func (i *userManagementRepositoryImplementation) FindOneRegistration(umc *config.UserManagementConfig, token string) (*contract.RegistrationModel, error) {
 	result := contract.RegistrationModel{}
 	var registrationStatusNullable sql.NullString
@@ -230,7 +390,6 @@ func (i *userManagementRepositoryImplementation) FindOneRegistration(umc *config
 	return &result, nil
 }
 
-// FindOneRegistrationByCredential implements contract.UserManagementRepository.
 func (i *userManagementRepositoryImplementation) FindOneRegistrationByCredential(umc *config.UserManagementConfig, credential string) (*contract.RegistrationModel, error) {
 	result := contract.RegistrationModel{}
 	// SELECT id, token, otp, credential, created_at, type, registration_status, device_id FROM regigstration WHERE token = $1 AND user_type = $2
@@ -256,7 +415,6 @@ func (i *userManagementRepositoryImplementation) FindOneRegistrationByCredential
 	return &result, nil
 }
 
-// FindOneUser implements contract.UserManagementRepository.
 func (i *userManagementRepositoryImplementation) FindOneUser(umc *config.UserManagementConfig, credential string) (*contract.UserModel, error) {
 	result := contract.UserModel{}
 	selectedCred := umc.SelectedCredential
@@ -286,7 +444,6 @@ func (i *userManagementRepositoryImplementation) FindOneUser(umc *config.UserMan
 	return &result, nil
 }
 
-// FindUserDevice implements contract.UserManagementRepository.
 func (i *userManagementRepositoryImplementation) FindUserDevice(umc *config.UserManagementConfig, user_id int, device_id string) (*contract.UserDeviceModel, error) {
 	result := contract.UserDeviceModel{}
 
@@ -313,7 +470,6 @@ func (i *userManagementRepositoryImplementation) FindUserDevice(umc *config.User
 	return &result, nil
 }
 
-// StoreForgotPassword implements contract.UserManagementRepository.
 func (i *userManagementRepositoryImplementation) StoreForgotPassword(umc *config.UserManagementConfig, credential string, token string, otp string) error {
 	// INSERT INTO <table name> (credential, token, otp, type, created_at) VALUES ($1..n)
 	query := fmt.Sprintf("INSERT INTO %s (%s, %s, %s, %s, %s) VALUES ($1, $2, $3, $4, $5)", pq.QuoteIdentifier(umc.ResetPassword.TableName), umc.ResetPassword.CredentialProperty,
@@ -333,7 +489,6 @@ func (i *userManagementRepositoryImplementation) StoreForgotPassword(umc *config
 	return nil
 }
 
-// StoreUser implements contract.UserManagementRepository.
 func (i *userManagementRepositoryImplementation) StoreUser(umc *config.UserManagementConfig, column string, args ...string) (int, error) {
 	value := lib.InsertQueryValueMaker(args...)
 	// INSERT INTO <table name> <column> VALUES <values>
@@ -358,7 +513,6 @@ func (i *userManagementRepositoryImplementation) StoreUser(umc *config.UserManag
 	return int(insertedID), nil
 }
 
-// UpdateLoginCredential implements contract.UserManagementRepository.
 func (i *userManagementRepositoryImplementation) UpdateLoginCredential(umc *config.UserManagementConfig, device_id string, credential string) error {
 	// UPDATE -login- SET credential = $1 WHERE device_id = $1
 	query := fmt.Sprintf("UPDATE %s SET %s = $1 WHERE %s = $2", pq.QuoteIdentifier(umc.Login.TableName), umc.Login.CredentialProperty, umc.Login.DeviceIDProperty)
@@ -376,7 +530,6 @@ func (i *userManagementRepositoryImplementation) UpdateLoginCredential(umc *conf
 	return nil
 }
 
-// UpdateLoginFailedAttempt implements contract.UserManagementRepository.
 func (i *userManagementRepositoryImplementation) UpdateLoginFailedAttempt(umc *config.UserManagementConfig, device_id string, new_number int) error {
 	// UPDATE <table name> SET failed_attempt = $1 WHERE device_id = $2
 	query := fmt.Sprintf("UPDATE %s SET %s = $1 WHERE %s = $2", pq.QuoteIdentifier(umc.Login.TableName), umc.Login.FailedCounterProperty, umc.Login.DeviceIDProperty)
@@ -394,7 +547,6 @@ func (i *userManagementRepositoryImplementation) UpdateLoginFailedAttempt(umc *c
 	return nil
 }
 
-// UpdateStatusRegistration implements contract.UserManagementRepository.
 func (i *userManagementRepositoryImplementation) UpdateStatusRegistration(umc *config.UserManagementConfig, token string) error {
 	// UPDATE <table name> SET registration_status = $1 WHERE token = $2
 	query := fmt.Sprintf("UPDATE %s SET %s = $1 WHERE %s = $2", pq.QuoteIdentifier(umc.Registration.TableName), umc.Registration.RegistrationStatusProperty, umc.Registration.TokenProperty)
@@ -412,7 +564,6 @@ func (i *userManagementRepositoryImplementation) UpdateStatusRegistration(umc *c
 	return nil
 }
 
-// UpdateUserPassword implements contract.UserManagementRepository.
 func (i *userManagementRepositoryImplementation) UpdateUserPassword(umc *config.UserManagementConfig, credential string, safe_password string) error {
 	tableName := umc.SelectedCredential.UserTable
 	credentials := umc.SelectedCredential.Credential

@@ -4,58 +4,6 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-type UserModel struct {
-	ID           int    `json:"id"`
-	Username     string `json:"username"`
-	Email        string `json:"email"`
-	Password     string `json:"password"`
-	PhotoProfile string `json:"photo_profile"`
-	PhoneNumber  string `json:"phone_number"`
-}
-
-type ForgotPasswordModel struct {
-	ID         int
-	Token      string
-	OTP        string
-	Credential string
-	CreatedAt  int64
-	Type       string
-}
-
-type RegistrationModel struct {
-	ID                 int
-	Token              string
-	OTP                string
-	Credential         string
-	CreatedAt          int64
-	Type               string
-	RegistrationStatus string
-	DeviceID           string
-}
-
-type LoginModel struct {
-	ID            int
-	Token         string
-	Credential    string
-	Type          string
-	DeviceID      string
-	LoginAt       int64
-	AttemptAt     int64
-	FailedCounter int
-}
-
-type UserDeviceModel struct {
-	ID       int
-	DeviceID string
-	UserID   int
-	UserType string
-}
-
-type DynamicColumnValue struct {
-	Column string
-	Value  []string
-}
-
 type UserManagement interface {
 	Login(credential string, password string, device_id string) (user *UserModel, token string, HTTPStatus int, failure error)
 
@@ -70,10 +18,45 @@ type UserManagement interface {
 	ResetPassword(token string, otp string, new_password string, conf_password string) (HTTPStatus int, failure error)
 
 	Logout(device_id string) (httpStatus int, failure error)
+
+	UpdateUserCredential(new_credential string, current_password string, user_id int, credential_property string) (HTTPStatus int, failure error)
+
+	UpdateUserPassword(new_password string, confirmation_password string, user_id int) (HTTPStatus int, failure error)
+
+	UpsertUserFCMToken(token string, user_id int) (HTTPStatus int, failure error)
+
+	UpdateUserJWTToken(user_id int, device_id string) (token string, HTTPStatus int, failure error)
+
+	CheckUserJWTToken(device_id string) (checkResponse map[string]interface{}, HTTPStatus int, failure error)
 }
 
 type UserManagementMock struct {
 	Mock mock.Mock
+}
+
+func (m *UserManagementMock) UpdateUserCredential(new_credential string, current_password string, credential_property string) (HTTPStatus int, failure error) {
+	args := m.Mock.Called(new_credential, current_password, credential_property)
+	return args.Int(0), args.Error(1)
+}
+
+func (m *UserManagementMock) UpdateUserPassword(new_password string, confirmation_password string) (HTTPStatus int, failure error) {
+	args := m.Mock.Called(new_password, confirmation_password)
+	return args.Int(0), args.Error(1)
+}
+
+func (m *UserManagementMock) UpsertUserFCMToken(token string, user_id int) (HTTPStatus int, failure error) {
+	args := m.Mock.Called(token, user_id)
+	return args.Int(0), args.Error(1)
+}
+
+func (m *UserManagementMock) UpdateUserJWTToken(user_id int, device_id string) (token string, HTTPStatus int, failure error) {
+	args := m.Mock.Called(device_id, user_id)
+	return args.String(0), args.Int(1), args.Error(2)
+}
+
+func (m *UserManagementMock) CheckUserJWTToken(device_id string) (checkResponse map[string]interface{}, HTTPStatus int, failure error) {
+	args := m.Mock.Called(device_id)
+	return args.Get(0).(map[string]interface{}), args.Int(1), args.Error(2)
 }
 
 func (m *UserManagementMock) Login(credential string, password string, device_id string) (user *UserModel, token string, HTTPStatus int, failure error) {

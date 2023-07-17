@@ -34,7 +34,6 @@ var (
 				CredentialProperty: "credential",
 				CreatedAtProperty:  "created_at",
 				ValidityDuration:   900,
-				EmailTemplatePath:  "template/reset-password.html",
 				UserTypeProperty:   "user_type",
 			},
 			Login: config.LoginConfig{
@@ -48,7 +47,6 @@ var (
 				MaxFailedAttempt:      3,
 				LoginBlockDuration:    300,
 				AttemptAtProperty:     "attempted_at",
-				EmailTemplatePath:     "template/security-concern.html",
 			},
 			Registration: config.RegistrationConfig{
 				TableName:                  "registration",
@@ -57,22 +55,361 @@ var (
 				TokenProperty:              "token",
 				OTPProperty:                "otp",
 				RegistrationStatusProperty: "status",
-				EmailTemplatePath:          "templae/registration.html",
 				DeviceIDProperty:           "device_id",
 				UserTypeProperty:           "user_type",
 				CreatedAtProperty:          "created_at",
 			},
 			UserDevice: config.UserDeviceConfig{
-				TableName:         "user_device",
+				TableName:        "user_device",
+				IDProperty:       "id",
+				DeviceIDProperty: "device_id",
+				UserIDProperty:   "user_id",
+				UserTypeProperty: "yser_type",
+			},
+			UserFCMToken: config.UserFCMTokenConfig{
+				TableName:         "user_fcm",
 				IDProperty:        "id",
-				DeviceIDProperty:  "device_id",
+				TokenProperty:     "token",
+				TimestampProperty: "timestamp",
+				UserTypeProperty:  "user_type",
 				UserIDProperty:    "user_id",
-				UserTypeProperty:  "yser_type",
-				EmailTemplatePath: "template/security-concern.html",
 			},
 		},
 	}
 )
+
+func TestGetUserCredentials(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	assert.NoError(t, err)
+	repository := UserManagementRepository(db)
+	conf := configuration.UserManagement.SelectedCredential
+	query := fmt.Sprintf("SELECT %s as id, %s as email, %s as phone FROM %s WHERE %s = \\$1", conf.IDProperty, conf.EmailProperty, conf.PhoneProperty, pq.QuoteIdentifier(conf.UserTable), conf.IDProperty)
+	t.Logf("query on test : %v", query)
+	userID := 1
+
+	t.Run("error on prepare", func(t *testing.T) {
+		mock.ExpectPrepare(query).WillReturnError(fmt.Errorf("error prepare"))
+
+		_, err = repository.GetUserCredentials(&configuration.UserManagement, userID)
+		assert.NotEmpty(t, err)
+		t.Logf("error : %v", err.Error())
+	})
+
+	t.Run("error on query", func(t *testing.T) {
+		stmt := mock.ExpectPrepare(query)
+		stmt.ExpectQuery().WillReturnError(fmt.Errorf("error exec"))
+
+		_, err = repository.GetUserCredentials(&configuration.UserManagement, userID)
+		assert.NotEmpty(t, err)
+		t.Logf("error : %v", err.Error())
+	})
+
+	t.Run("user not found", func(t *testing.T) {
+		expectedRows := sqlmock.NewRows([]string{conf.IDProperty, conf.EmailProperty, conf.PhoneProperty})
+		stmt := mock.ExpectPrepare(query)
+		stmt.ExpectQuery().WithArgs(userID).WillReturnRows(expectedRows)
+
+		user, err := repository.GetUserCredentials(&configuration.UserManagement, userID)
+		assert.NoError(t, err)
+		t.Logf("user : %v", user)
+	})
+
+	t.Run("success operation", func(t *testing.T) {
+		expectedRows := sqlmock.NewRows([]string{conf.IDProperty, conf.EmailProperty, conf.PhoneProperty}).AddRow(1, "dona@gmail.com", "+6282123132")
+		stmt := mock.ExpectPrepare(query)
+		stmt.ExpectQuery().WithArgs(userID).WillReturnRows(expectedRows)
+
+		user, err := repository.GetUserCredentials(&configuration.UserManagement, userID)
+		assert.NoError(t, err)
+		t.Logf("user : %v", user)
+	})
+}
+
+func TestUpdateJWTToken(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	assert.NoError(t, err)
+	repository := UserManagementRepository(db)
+	loginConf := configuration.UserManagement.Login
+	query := fmt.Sprintf("UPDATE %s SET %s = \\$1 WHERE %s = \\$2", pq.QuoteIdentifier(loginConf.TableName), loginConf.TokenProperty, loginConf.DeviceIDProperty)
+	t.Logf("query on test : %v", query)
+	token := "token"
+	deviceID := "device-id"
+
+	t.Run("error on prepare", func(t *testing.T) {
+		mock.ExpectPrepare(query).WillReturnError(fmt.Errorf("error prepare"))
+
+		err = repository.UpdateJWTToken(&configuration.UserManagement, token, deviceID)
+		assert.NotEmpty(t, err)
+		t.Logf("error : %v", err.Error())
+	})
+
+	t.Run("error on exec", func(t *testing.T) {
+		mock.ExpectPrepare(query)
+		mock.ExpectExec(query).WithArgs(token, deviceID).WillReturnError(fmt.Errorf("error exec"))
+
+		err = repository.UpdateJWTToken(&configuration.UserManagement, token, deviceID)
+		assert.NotEmpty(t, err)
+		t.Logf("error : %v", err.Error())
+	})
+
+	t.Run("success operation", func(t *testing.T) {
+		mock.ExpectPrepare(query)
+		mock.ExpectExec(query).WithArgs(token, deviceID).WillReturnResult(sqlmock.NewResult(1, 1))
+
+		err = repository.UpdateJWTToken(&configuration.UserManagement, token, deviceID)
+		assert.NoError(t, err)
+	})
+}
+
+func TestUpdateUserPasswordByUserID(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	assert.NoError(t, err)
+	repository := UserManagementRepository(db)
+	credConf := configuration.UserManagement.SelectedCredential
+	query := fmt.Sprintf("UPDATE %s SET %s = \\$1 WHERE %s = \\$2", pq.QuoteIdentifier(credConf.UserTable), credConf.PasswordProperty, credConf.IDProperty)
+	t.Logf("query on test : %v", query)
+	new_password := "new-password"
+	userID := 1
+
+	t.Run("error on prepare", func(t *testing.T) {
+		mock.ExpectPrepare(query).WillReturnError(fmt.Errorf("error prepare"))
+
+		err = repository.UpdateUserPasswordByUserID(&configuration.UserManagement, new_password, userID)
+		assert.NotEmpty(t, err)
+		t.Logf("error : %v", err.Error())
+	})
+
+	t.Run("error on exec", func(t *testing.T) {
+		stmt := mock.ExpectPrepare(query)
+		stmt.ExpectExec().WithArgs(new_password, userID).WillReturnError(fmt.Errorf("error exec"))
+
+		err = repository.UpdateUserPasswordByUserID(&configuration.UserManagement, new_password, userID)
+		assert.NotEmpty(t, err)
+		t.Logf("error : %v", err.Error())
+	})
+
+	t.Run("success operation", func(t *testing.T) {
+		stmt := mock.ExpectPrepare(query)
+		stmt.ExpectExec().WithArgs(new_password, userID).WillReturnResult(sqlmock.NewResult(1, 1))
+
+		err = repository.UpdateUserPasswordByUserID(&configuration.UserManagement, new_password, userID)
+		assert.NoError(t, err)
+	})
+}
+
+func TestFindOneUserByID(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	assert.NoError(t, err)
+	repository := UserManagementRepository(db)
+	credConf := configuration.UserManagement.SelectedCredential
+	query := fmt.Sprintf("SELECT %s as id, %s as email, %s as username, %s as phone, %s as photo_profile, %s as password FROM %s WHERE %s = \\$1", credConf.IDProperty,
+		credConf.EmailProperty, credConf.UsernameProperty, credConf.PhoneProperty, credConf.PhotoProfileProperty, credConf.PasswordProperty, pq.QuoteIdentifier(credConf.UserTable),
+		credConf.IDProperty)
+	t.Logf("query on test : %v", query)
+	userID := 1
+
+	t.Run("error on prepare", func(t *testing.T) {
+		mock.ExpectPrepare(query).WillReturnError(fmt.Errorf("error prepare"))
+
+		_, err = repository.FindOneUserByID(&configuration.UserManagement, userID)
+		assert.NotEmpty(t, err)
+		t.Logf("error : %v", err.Error())
+	})
+
+	t.Run("error on exec", func(t *testing.T) {
+		stmt := mock.ExpectPrepare(query)
+		stmt.ExpectQuery().WillReturnError(fmt.Errorf("error exec"))
+
+		_, err = repository.FindOneUserByID(&configuration.UserManagement, userID)
+		assert.NotEmpty(t, err)
+		t.Logf("error : %v", err.Error())
+	})
+
+	t.Run("user not found", func(t *testing.T) {
+		expectedRow := sqlmock.NewRows([]string{credConf.IDProperty, credConf.EmailProperty, credConf.UsernameProperty, credConf.PhoneProperty, credConf.PhotoProfileProperty, credConf.PasswordProperty})
+		stmt := mock.ExpectPrepare(query)
+		stmt.ExpectQuery().WithArgs(userID).WillReturnRows(expectedRow)
+
+		user, err := repository.FindOneUserByID(&configuration.UserManagement, userID)
+		assert.NoError(t, err)
+		t.Logf("user : %v", user)
+	})
+
+	t.Run("user not found", func(t *testing.T) {
+		expectedRow := sqlmock.NewRows([]string{credConf.IDProperty, credConf.EmailProperty, credConf.UsernameProperty, credConf.PhoneProperty, credConf.PhotoProfileProperty, credConf.PasswordProperty}).
+			AddRow(1, "dona@gmail.com", "dona123", "0811212xxx", "yser/jpg1.jpeg", "$astdas")
+		stmt := mock.ExpectPrepare(query)
+		stmt.ExpectQuery().WithArgs(userID).WillReturnRows(expectedRow)
+
+		user, err := repository.FindOneUserByID(&configuration.UserManagement, userID)
+		assert.NoError(t, err)
+		t.Logf("user : %v", user)
+	})
+}
+
+func TestUpdateCredential(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	assert.NoError(t, err)
+	repository := UserManagementRepository(db)
+	credConf := configuration.UserManagement.SelectedCredential
+	credentialProperty := "email"
+	query := fmt.Sprintf("UPDATE %s SET %s = \\$1 WHERE %s = \\$2", pq.QuoteIdentifier(credConf.UserTable), credentialProperty, credConf.IDProperty)
+	t.Logf("query on test : %v", query)
+	newCred := "dongobongo@gmail.com"
+	userID := 1
+
+	t.Run("error on prepare", func(t *testing.T) {
+		mock.ExpectPrepare(query).WillReturnError(fmt.Errorf("error prepare"))
+
+		err = repository.UpdateCredential(&configuration.UserManagement, newCred, userID, credentialProperty)
+		assert.NotEmpty(t, err)
+		t.Logf("error : %v", err.Error())
+	})
+
+	t.Run("error on exec", func(t *testing.T) {
+		stmt := mock.ExpectPrepare(query)
+		stmt.ExpectExec().WithArgs(newCred, userID).WillReturnError(fmt.Errorf("error exec"))
+
+		err = repository.UpdateCredential(&configuration.UserManagement, newCred, userID, credentialProperty)
+		assert.NotEmpty(t, err)
+		t.Logf("error : %v", err.Error())
+	})
+
+	t.Run("success operation", func(t *testing.T) {
+		stmt := mock.ExpectPrepare(query)
+		stmt.ExpectExec().WithArgs(newCred, userID).WillReturnResult(sqlmock.NewResult(1, 1))
+
+		err = repository.UpdateCredential(&configuration.UserManagement, newCred, userID, credentialProperty)
+		assert.NoError(t, err)
+	})
+}
+
+func TestGetFCMToken(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	assert.NoError(t, err)
+	repository := UserManagementRepository(db)
+	conf := configuration.UserManagement.UserFCMToken
+	query := fmt.Sprintf("SELECT %s as id, %s as token, %s as timestamp, %s as user_type, %s as user_id FROM %s WHERE %s = \\$1", conf.IDProperty, conf.TokenProperty,
+		conf.TimestampProperty, conf.UserTypeProperty, conf.UserIDProperty, pq.QuoteIdentifier(conf.TableName), conf.UserIDProperty)
+	t.Logf("query on test : %v", query)
+	userID := 1
+	expectedRow := sqlmock.NewRows([]string{conf.IDProperty, conf.TokenProperty, conf.TimestampProperty, conf.UserTypeProperty, conf.UserIDProperty})
+
+	t.Run("error on prepare", func(t *testing.T) {
+		mock.ExpectPrepare(query).WillReturnError(fmt.Errorf("error prepare"))
+
+		_, err = repository.GetFCMToken(&configuration.UserManagement, userID)
+		assert.NotEmpty(t, err)
+		t.Logf("error : %v", err.Error())
+	})
+
+	t.Run("error on query", func(t *testing.T) {
+		stmt := mock.ExpectPrepare(query)
+		stmt.ExpectQuery().WillReturnError(fmt.Errorf("error query"))
+
+		_, err = repository.GetFCMToken(&configuration.UserManagement, userID)
+		assert.NotEmpty(t, err)
+		t.Logf("error : %v", err.Error())
+	})
+
+	t.Run("fcm token not found", func(t *testing.T) {
+		stmt := mock.ExpectPrepare(query)
+		stmt.ExpectQuery().WillReturnRows(expectedRow)
+
+		fcm, err := repository.GetFCMToken(&configuration.UserManagement, userID)
+		assert.NoError(t, err)
+		assert.Empty(t, fcm)
+		t.Logf("user fcm : %v", fcm)
+	})
+
+	t.Run("fcm token found", func(t *testing.T) {
+		exr := sqlmock.NewRows([]string{conf.IDProperty, conf.TokenProperty, conf.TimestampProperty, conf.UserTypeProperty, conf.UserIDProperty}).AddRow(1, "token", time.Now().Unix(), "admin", 1)
+
+		stmt := mock.ExpectPrepare(query)
+		stmt.ExpectQuery().WillReturnRows(exr)
+
+		fcm, err := repository.GetFCMToken(&configuration.UserManagement, userID)
+		assert.NoError(t, err)
+		t.Logf("user fcm : %v", fcm)
+	})
+}
+
+func TestStoreFCMToken(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	assert.NoError(t, err)
+	repository := UserManagementRepository(db)
+	conf := configuration.UserManagement.UserFCMToken
+	query := fmt.Sprintf("INSERT INTO %s (.+) VALUES (.+)", pq.QuoteIdentifier(conf.TableName))
+	t.Logf("query on test : %v", query)
+
+	token := "token"
+	userID := 1
+	timestamp := time.Now().UTC().Unix()
+	uType := configuration.UserManagement.SelectedCredential.Type
+
+	t.Run("error on prepare", func(t *testing.T) {
+		mock.ExpectPrepare(query).WillReturnError(fmt.Errorf("error prepare"))
+
+		err = repository.StoreFCMToken(&configuration.UserManagement, token, timestamp, userID)
+		assert.NotEmpty(t, err)
+		t.Logf("error : %v", err.Error())
+	})
+
+	t.Run("error on prepare", func(t *testing.T) {
+		stmt := mock.ExpectPrepare(query)
+		stmt.ExpectExec().WithArgs(token, timestamp, uType, userID).WillReturnError(fmt.Errorf("error exec"))
+
+		err = repository.StoreFCMToken(&configuration.UserManagement, token, timestamp, userID)
+		assert.NotEmpty(t, err)
+		t.Logf("error : %v", err.Error())
+	})
+
+	t.Run("success operation", func(t *testing.T) {
+		stmt := mock.ExpectPrepare(query)
+		stmt.ExpectExec().WithArgs(token, timestamp, uType, userID).WillReturnResult(sqlmock.NewResult(1, 1))
+
+		err = repository.StoreFCMToken(&configuration.UserManagement, token, timestamp, userID)
+		assert.NoError(t, err)
+	})
+}
+
+func TestUpdateFCMToken(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	assert.NoError(t, err)
+	repository := UserManagementRepository(db)
+	conf := configuration.UserManagement.UserFCMToken
+	query := fmt.Sprintf("UPDATE %s SET %s = \\$1, %s = \\$2 WHERE %s = \\$3", pq.QuoteIdentifier(conf.TableName), conf.TokenProperty, conf.TimestampProperty, conf.UserIDProperty)
+	t.Logf("query on test : %v", query)
+
+	token := "token"
+	userID := 1
+	timestamp := time.Now().UTC().Unix()
+
+	t.Run("error on prepare", func(t *testing.T) {
+		mock.ExpectPrepare(query).WillReturnError(fmt.Errorf("error prepare"))
+
+		err = repository.UpdateFCMToken(&configuration.UserManagement, token, timestamp, userID)
+		assert.NotEmpty(t, err)
+		t.Logf("error : %v", err.Error())
+	})
+
+	t.Run("error on exec", func(t *testing.T) {
+		stmt := mock.ExpectPrepare(query)
+		stmt.ExpectExec().WithArgs(token, timestamp, userID).WillReturnError(fmt.Errorf("error exec"))
+
+		err = repository.UpdateFCMToken(&configuration.UserManagement, token, timestamp, userID)
+		assert.NotEmpty(t, err)
+		t.Logf("error : %v", err.Error())
+	})
+
+	t.Run("success operation", func(t *testing.T) {
+		stmt := mock.ExpectPrepare(query)
+		stmt.ExpectExec().WithArgs(token, timestamp, userID).WillReturnResult(sqlmock.NewResult(1, 1))
+
+		err = repository.UpdateFCMToken(&configuration.UserManagement, token, timestamp, userID)
+		assert.NoError(t, err)
+	})
+}
 
 func TestCompleteLogin(t *testing.T) {
 	db, mock, err := sqlmock.New()
@@ -316,6 +653,16 @@ func TestFindOneForgotPassword(t *testing.T) {
 	})
 
 	t.Run("success operation", func(t *testing.T) {
+		expectedRow := sqlmock.NewRows([]string{"id", "token", "otp", "credential", "created_at"})
+		mock.ExpectPrepare(query)
+		mock.ExpectQuery(query).WithArgs(token, userType).WillReturnRows(expectedRow)
+
+		fp, err := repository.FindOneForgotPassword(&umc, token)
+		assert.Empty(t, err)
+		assert.Empty(t, fp)
+	})
+
+	t.Run("success operation", func(t *testing.T) {
 		curentTime := time.Now().Unix()
 		expectedRow := sqlmock.NewRows([]string{"id", "token", "otp", "credential", "created_at"}).AddRow(1, "12asd-a34s-421ff-123", "ABD1234", "user1@gmail.com", curentTime)
 
@@ -364,6 +711,16 @@ func TestFindoneLoginSession(t *testing.T) {
 		_, err := repository.FindOneLoginSession(&umc, deviceID)
 		assert.NotEmpty(t, err)
 		t.Logf("error : %v", err.Error())
+	})
+
+	t.Run("login session not found", func(t *testing.T) {
+		expectedRows := sqlmock.NewRows([]string{"id", "token", "credential", "type", "login_at", "attempt_at", "failed_counter"})
+		mock.ExpectPrepare(query)
+		mock.ExpectQuery(query).WithArgs(deviceID, userType).WillReturnRows(expectedRows)
+
+		loginSession, err := repository.FindOneLoginSession(&umc, deviceID)
+		assert.Empty(t, err)
+		assert.Empty(t, loginSession)
 	})
 
 	t.Run("success operation", func(t *testing.T) {
@@ -415,6 +772,16 @@ func TestFindOneRegistration(t *testing.T) {
 		_, err := repository.FindOneRegistration(&umc, token)
 		assert.NotEmpty(t, err)
 		t.Logf("error : %v", err.Error())
+	})
+
+	t.Run("registration not found", func(t *testing.T) {
+		expectedRows := sqlmock.NewRows([]string{"id", "token", "otp", "credential", "created_at", "type", "registration_status", "device_id"})
+		mock.ExpectPrepare(query)
+		mock.ExpectQuery(query).WithArgs(token, userType).WillReturnRows(expectedRows)
+
+		registration, err := repository.FindOneRegistration(&umc, token)
+		assert.Empty(t, err)
+		assert.Empty(t, registration)
 	})
 
 	t.Run("success operation", func(t *testing.T) {
@@ -469,6 +836,16 @@ func TestFindOneRegistrationByCredential(t *testing.T) {
 		_, err := repository.FindOneRegistrationByCredential(&umc, credential)
 		assert.NotEmpty(t, err)
 		t.Logf("error : %v", err.Error())
+	})
+
+	t.Run("registration not found", func(t *testing.T) {
+		expectedRows := sqlmock.NewRows([]string{"id", "token", "otp", "credential", "created_at", "type", "registration_status", "device_id"})
+		mock.ExpectPrepare(query)
+		mock.ExpectQuery(query).WithArgs(credential, userType).WillReturnRows(expectedRows)
+
+		registration, err := repository.FindOneRegistrationByCredential(&umc, credential)
+		assert.Empty(t, err)
+		assert.Empty(t, registration)
 	})
 
 	t.Run("success operation", func(t *testing.T) {
@@ -590,6 +967,16 @@ func TestFindUserDevice(t *testing.T) {
 		t.Logf("error: %v", err.Error())
 	})
 
+	t.Run("user device not found", func(t *testing.T) {
+		expectedRows := sqlmock.NewRows([]string{"id", "device_id", "user_id", "user_type"})
+		mock.ExpectPrepare(query)
+		mock.ExpectQuery(query).WithArgs(userID, deviceID).WillReturnRows(expectedRows)
+
+		result, err := repository.FindUserDevice(&umc, userID, deviceID)
+		assert.Empty(t, err)
+		assert.Empty(t, result)
+	})
+
 	t.Run("success operation", func(t *testing.T) {
 		expectedRows := sqlmock.NewRows([]string{"id", "device_id", "user_id", "user_type"}).
 			AddRow(1, deviceID, userID, "user")
@@ -672,6 +1059,17 @@ func TestStoreUser(t *testing.T) {
 		_, err := repository.StoreUser(&umc, column, args...)
 		assert.NotEmpty(t, err)
 		t.Logf("error: %v", err.Error())
+	})
+
+	t.Run("no inserted user", func(t *testing.T) {
+		mock.ExpectPrepare(query)
+		mock.ExpectExec(query).WillReturnResult(sqlmock.NewErrorResult(fmt.Errorf("error exec")))
+
+		insertedID, err := repository.StoreUser(&umc, column, args...)
+		assert.NotEmpty(t, err)
+		assert.Equal(t, 0, insertedID)
+
+		t.Logf("inserted ID: %v", insertedID)
 	})
 
 	t.Run("success operation", func(t *testing.T) {
@@ -868,7 +1266,7 @@ func TestUpdateRegistration(t *testing.T) {
 
 	t.Run("error on exec", func(t *testing.T) {
 		mock.ExpectPrepare(query)
-		mock.ExpectExec(query).WillReturnError(fmt.Errorf("error prepare"))
+		mock.ExpectExec(query).WillReturnError(fmt.Errorf("error exec"))
 
 		err := repository.UpdateRegistration(&configuration.UserManagement, token, credential, otp, deviceID, createdAt)
 		assert.Error(t, err)
@@ -877,9 +1275,9 @@ func TestUpdateRegistration(t *testing.T) {
 
 	t.Run("succes operation", func(t *testing.T) {
 		mock.ExpectPrepare(query)
-		mock.ExpectExec(query).WithArgs()
+		mock.ExpectExec(query).WithArgs(token, credential, otp, deviceID, createdAt, credential).WillReturnResult(sqlmock.NewResult(1, 1))
 
 		err := repository.UpdateRegistration(&configuration.UserManagement, token, credential, otp, deviceID, createdAt)
-		assert.Error(t, err)
+		assert.NoError(t, err)
 	})
 }

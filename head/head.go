@@ -182,7 +182,7 @@ func (h *module) Middleware(userType string) (contract.Middleware, error) {
 }
 
 func (h *module) UserManagement(userType string) (contract.UserManagement, error) {
-	UM, err := usermanagement.UserManagement(h.Configuration, h.UserManagementRepository, h.Identfier, h.Encryption, h.JWT, h.Mailer, h.TemplateProcessor, userType)
+	UM, err := usermanagement.UserManagement(h.Configuration, h.UserManagementRepository, h.Identfier, h.Encryption, h.JWT, h.Mailer, h.Whatsapp, h.TemplateProcessor, userType)
 	if err != nil {
 		return nil, err
 	}

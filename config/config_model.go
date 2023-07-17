@@ -39,7 +39,18 @@ type UserManagementConfig struct {
 	ResetPassword      ResetPasswordConfig `yaml:"reset_password"`
 	UserDevice         UserDeviceConfig    `yaml:"user_device"`
 	UserFCMToken       UserFCMTokenConfig  `yaml:"user_fcm_token"`
+	MessageTemplate    MessageTemplate     `yaml:"message_template"`
 	SelectedCredential UserCredential
+}
+
+type MessageTemplate struct {
+	NewRegistrationEmailTemplatePath  string `yaml:"new_registration_email_template_path"`
+	NewDeviceWarningEmailTemplatePath string `yaml:"new_device_warning_email_template_path"`
+	ForgotPasswordEmailTemplatePath   string `yaml:"forgot_password_email_template_path"`
+	NewRegistrationMessageTemplate    string `yaml:"new_registration_message_template"`
+	NewDeviceWarningMessageTemplate   string `yaml:"new_device_warning_message_template"`
+	ForgotPasswordMessageTemplate     string `yaml:"forgot_password_message_template"`
+	LoginCancelationURL               string `yaml:"login_cancelation_url"`
 }
 
 type UserCredential struct {
@@ -65,7 +76,6 @@ type LoginConfig struct {
 	MaxFailedAttempt      int    `yaml:"max_failed_attempt"`
 	LoginBlockDuration    int    `yaml:"login_block_duration"`
 	AttemptAtProperty     string `yaml:"attempt_at_property"`
-	EmailTemplatePath     string `yaml:"email_template_path"`
 }
 
 type RegistrationConfig struct {
@@ -75,7 +85,6 @@ type RegistrationConfig struct {
 	TokenProperty              string `yaml:"token_property"`
 	OTPProperty                string `yaml:"otp_property"`
 	RegistrationStatusProperty string `yaml:"registration_status_property"`
-	EmailTemplatePath          string `yaml:"email_template_path"`
 	DeviceIDProperty           string `yaml:"device_id_property"`
 	UserTypeProperty           string `yaml:"user_type_property"`
 	CreatedAtProperty          string `yaml:"created_at_property"`
@@ -87,6 +96,7 @@ type UserFCMTokenConfig struct {
 	TokenProperty     string `yaml:"token_property"`
 	TimestampProperty string `yaml:"timestamp_property"`
 	UserTypeProperty  string `yaml:"user_type_property"`
+	UserIDProperty    string `yaml:"user_id_property"`
 }
 
 type ResetPasswordConfig struct {
@@ -97,17 +107,15 @@ type ResetPasswordConfig struct {
 	CredentialProperty string `yaml:"credential_property"`
 	CreatedAtProperty  string `yaml:"created_at_property"`
 	ValidityDuration   int    `yaml:"validity_duration"`
-	EmailTemplatePath  string `yaml:"email_template_path"`
 	UserTypeProperty   string `yaml:"user_type_property"`
 }
 
 type UserDeviceConfig struct {
-	TableName         string `yaml:"table_name"`
-	IDProperty        string `yaml:"id_property"`
-	DeviceIDProperty  string `yaml:"device_id_property"`
-	UserIDProperty    string `yaml:"user_id_property"`
-	UserTypeProperty  string `yaml:"user_type_property"`
-	EmailTemplatePath string `yaml:"email_template_path"`
+	TableName        string `yaml:"table_name"`
+	IDProperty       string `yaml:"id_property"`
+	DeviceIDProperty string `yaml:"device_id_property"`
+	UserIDProperty   string `yaml:"user_id_property"`
+	UserTypeProperty string `yaml:"user_type_property"`
 }
 
 type Midtrans struct {

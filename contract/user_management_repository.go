@@ -6,47 +6,103 @@ import (
 )
 
 type UserManagementRepository interface {
-	FindOneUser(user_management_conf *config.UserManagementConfig, credential string) (*UserModel, error)
+	GetUserCredentials(umc *config.UserManagementConfig, user_id int) (*UserModel, error)
 
-	CreateRegistration(user_management_conf *config.UserManagementConfig, token string, credential string, otp string, device_id string, created_at int64) error
+	FindOneUser(umc *config.UserManagementConfig, credential string) (*UserModel, error)
 
-	FindOneRegistration(user_management_conf *config.UserManagementConfig, token string) (*RegistrationModel, error)
+	FindOneUserByID(umc *config.UserManagementConfig, user_id int) (*UserModel, error)
 
-	FindOneRegistrationByCredential(user_management_conf *config.UserManagementConfig, credential string) (*RegistrationModel, error)
+	CreateRegistration(umc *config.UserManagementConfig, token string, credential string, otp string, device_id string, created_at int64) error
 
-	UpdateRegistration(user_management_conf *config.UserManagementConfig, token string, credential string, otp string, device_id string, created_at int64) error
+	FindOneRegistration(umc *config.UserManagementConfig, token string) (*RegistrationModel, error)
 
-	UpdateStatusRegistration(user_management_conf *config.UserManagementConfig, token string) error
+	FindOneRegistrationByCredential(umc *config.UserManagementConfig, credential string) (*RegistrationModel, error)
 
-	StoreUser(user_management_conf *config.UserManagementConfig, column string, args ...string) (int, error)
+	UpdateRegistration(umc *config.UserManagementConfig, token string, credential string, otp string, device_id string, created_at int64) error
 
-	UpdateUserPassword(user_management_conf *config.UserManagementConfig, credential string, safe_password string) error
+	UpdateStatusRegistration(umc *config.UserManagementConfig, token string) error
 
-	StoreForgotPassword(user_management_conf *config.UserManagementConfig, credential string, token string, otp string) error
+	StoreUser(umc *config.UserManagementConfig, column string, args ...string) (int, error)
 
-	FindOneForgotPassword(user_management_conf *config.UserManagementConfig, token string) (*ForgotPasswordModel, error)
+	UpdateUserPassword(umc *config.UserManagementConfig, credential string, safe_password string) error
 
-	DeleteForgotPassword(user_management_conf *config.UserManagementConfig, token string) error
+	StoreForgotPassword(umc *config.UserManagementConfig, credential string, token string, otp string) error
 
-	CreateNewLoginSession(user_management_conf *config.UserManagementConfig, credential string, device_id string) error
+	FindOneForgotPassword(umc *config.UserManagementConfig, token string) (*ForgotPasswordModel, error)
 
-	FindOneLoginSession(user_management_conf *config.UserManagementConfig, device_id string) (*LoginModel, error)
+	DeleteForgotPassword(umc *config.UserManagementConfig, token string) error
 
-	UpdateLoginFailedAttempt(user_management_conf *config.UserManagementConfig, device_id string, new_number int) error
+	CreateNewLoginSession(umc *config.UserManagementConfig, credential string, device_id string) error
 
-	UpdateLoginCredential(user_management_conf *config.UserManagementConfig, device_id string, credential string) error
+	FindOneLoginSession(umc *config.UserManagementConfig, device_id string) (*LoginModel, error)
 
-	CompleteLoginSession(user_management_conf *config.UserManagementConfig, token string, device_id string, login_at int64) error
+	UpdateLoginFailedAttempt(umc *config.UserManagementConfig, device_id string, new_number int) error
 
-	DeleteLoginSession(user_management_conf *config.UserManagementConfig, device_id string) error
+	UpdateLoginCredential(umc *config.UserManagementConfig, device_id string, credential string) error
 
-	CreateNewUserDevice(user_management_conf *config.UserManagementConfig, user_id int, device_id string) error
+	CompleteLoginSession(umc *config.UserManagementConfig, token string, device_id string, login_at int64) error
 
-	FindUserDevice(user_management_conf *config.UserManagementConfig, user_id int, device_id string) (*UserDeviceModel, error)
+	DeleteLoginSession(umc *config.UserManagementConfig, device_id string) error
+
+	CreateNewUserDevice(umc *config.UserManagementConfig, user_id int, device_id string) error
+
+	FindUserDevice(umc *config.UserManagementConfig, user_id int, device_id string) (*UserDeviceModel, error)
+
+	UpdateCredential(umc *config.UserManagementConfig, new_credential string, user_id int, credential_property string) error
+
+	UpdateUserPasswordByUserID(umc *config.UserManagementConfig, new_password string, user_id int) error
+
+	GetFCMToken(umc *config.UserManagementConfig, user_id int) (*UserFCMTokenModel, error)
+
+	StoreFCMToken(umc *config.UserManagementConfig, token string, timestamp int64, user_id int) error
+
+	UpdateFCMToken(umc *config.UserManagementConfig, token string, timestamp int64, user_id int) error
+
+	UpdateJWTToken(umc *config.UserManagementConfig, token string, device_id string) error
 }
 
 type UserManagementRepositoryMock struct {
 	Mock mock.Mock
+}
+
+func (m *UserManagementRepositoryMock) GetUserCredentials(umc *config.UserManagementConfig, user_id int) (*UserModel, error) {
+	args := m.Mock.Called(umc, user_id)
+	return args.Get(0).(*UserModel), args.Error(1)
+}
+
+func (m *UserManagementRepositoryMock) FindOneUserByID(umc *config.UserManagementConfig, user_id int) (*UserModel, error) {
+	args := m.Mock.Called(umc, user_id)
+	return args.Get(0).(*UserModel), args.Error(1)
+}
+
+func (m *UserManagementRepositoryMock) GetFCMToken(umc *config.UserManagementConfig, user_id int) (*UserFCMTokenModel, error) {
+	args := m.Mock.Called(umc, user_id)
+	return args.Get(0).(*UserFCMTokenModel), args.Error(1)
+}
+
+func (m *UserManagementRepositoryMock) UpdateCredential(umc *config.UserManagementConfig, new_credential string, user_id int, credential_property string) error {
+	args := m.Mock.Called(umc, new_credential, credential_property, user_id)
+	return args.Error(0)
+}
+
+func (m *UserManagementRepositoryMock) UpdateUserPasswordByUserID(umc *config.UserManagementConfig, new_password string, user_id int) error {
+	args := m.Mock.Called(umc, new_password, user_id)
+	return args.Error(0)
+}
+
+func (m *UserManagementRepositoryMock) StoreFCMToken(umc *config.UserManagementConfig, token string, timestamp int64, user_id int) error {
+	args := m.Mock.Called(umc, token, timestamp, user_id)
+	return args.Error(0)
+}
+
+func (m *UserManagementRepositoryMock) UpdateFCMToken(umc *config.UserManagementConfig, token string, timestamp int64, user_id int) error {
+	args := m.Mock.Called(umc, token, timestamp, user_id)
+	return args.Error(0)
+}
+
+func (m *UserManagementRepositoryMock) UpdateJWTToken(umc *config.UserManagementConfig, token string, device_id string) error {
+	args := m.Mock.Called(umc, token, device_id)
+	return args.Error(0)
 }
 
 func (m *UserManagementRepositoryMock) UpdateRegistration(user_management_conf *config.UserManagementConfig, token string, credential string, otp string, device_id string, created_at int64) error {

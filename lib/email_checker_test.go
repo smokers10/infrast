@@ -1,6 +1,7 @@
 package lib
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -18,18 +19,19 @@ func TestMailChecker(t *testing.T) {
 			Expected:     true,
 		},
 		{
-			ValueToCheck: "johndoe",
-			Expected:     false,
+			ValueToCheck: "johndoe@asu.com",
+			Expected:     true,
 		},
 		{
-			ValueToCheck: "08112123255",
+			ValueToCheck: "08112123255@ausytda.net",
 			Expected:     false,
 		},
 	}
 
 	for _, v := range testTable {
-		isEmail := EmailChecker(v.ValueToCheck)
-		t.Log(v.ValueToCheck)
-		assert.Equal(t, v.Expected, isEmail)
+		t.Run(fmt.Sprintf("Test %s", v.ValueToCheck), func(t *testing.T) {
+			isEmail := EmailChecker(v.ValueToCheck)
+			assert.Equal(t, v.Expected, isEmail)
+		})
 	}
 }

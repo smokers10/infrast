@@ -11,6 +11,40 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
+var (
+	errFoo     = errors.New("inteded error")
+	userDevice = &contract.UserDeviceModel{
+		ID:       1,
+		DeviceID: mock.Anything,
+		UserID:   1,
+		UserType: mock.Anything,
+	}
+	login = &contract.LoginModel{
+		ID:            1,
+		Token:         mock.Anything,
+		Credential:    mock.Anything,
+		Type:          mock.Anything,
+		DeviceID:      mock.Anything,
+		LoginAt:       time.Now().UTC().Unix(),
+		AttemptAt:     time.Now().UTC().Unix(),
+		FailedCounter: 0,
+	}
+	user = &contract.UserModel{
+		ID:           1,
+		Username:     mock.Anything,
+		Email:        mock.Anything,
+		Password:     mock.Anything,
+		PhotoProfile: mock.Anything,
+		PhoneNumber:  mock.Anything,
+	}
+	payload = map[string]interface{}{
+		"type":    "admin",
+		"user_id": 10,
+		"iat":     time.Now().UTC().Unix(),
+		"eat":     time.Now().UTC().AddDate(0, 0, 7).Unix(),
+	}
+)
+
 func TestAuthenticate(t *testing.T) {
 	c := config.Configuration{
 		Application: config.Application{
@@ -53,23 +87,17 @@ func TestAuthenticate(t *testing.T) {
 				MaxFailedAttempt:      3,
 				LoginBlockDuration:    300,
 				AttemptAtProperty:     "attemped_at",
-				EmailTemplatePath:     "template-email/login-secuity-concern.html",
 			},
 			UserDevice: config.UserDeviceConfig{
-				TableName:         "user_devices",
-				IDProperty:        "id",
-				DeviceIDProperty:  "device_id",
-				UserIDProperty:    "user_id",
-				UserTypeProperty:  "type",
-				EmailTemplatePath: "template-email/login-secuirty-concern.html",
+				TableName:        "user_devices",
+				IDProperty:       "id",
+				DeviceIDProperty: "device_id",
+				UserIDProperty:   "user_id",
+				UserTypeProperty: "type",
 			},
 		},
 	}
-	payload := map[string]interface{}{
-		"type":    "admin",
-		"user_id": 10,
-		"iat":     time.Now().AddDate(0, 0, 7).Unix(),
-	}
+	// umc := c.UserManagement
 
 	mockRepository := contract.UserManagementRepositoryMock{Mock: mock.Mock{}}
 	mockJWT := contract.JsonWebTokenContractMock{Mock: mock.Mock{}}
@@ -96,11 +124,12 @@ func TestAuthenticate(t *testing.T) {
 		t.Logf("err : %v", err)
 	})
 
-	t.Run("user type not match", func(t *testing.T) {
+	t.Run("token expired", func(t *testing.T) {
 		mockJWT.Mock.On("ParseToken", mock.Anything).Return(map[string]interface{}{
-			"type":    "robot go",
+			"type":    "admin",
 			"user_id": 10,
-			"iat":     time.Now().AddDate(0, 0, 7).Unix(),
+			"iat":     time.Now().UTC().Unix(),
+			"eat":     time.Now().UTC().AddDate(0, 0, -2).Unix(),
 		}, nil).Once()
 
 		res, err := middleware.Authenticate("token", "device-id")
@@ -109,9 +138,24 @@ func TestAuthenticate(t *testing.T) {
 		t.Logf("err : %v", err)
 	})
 
-	t.Run("error get user device", func(t *testing.T) {
+	t.Run("user type not match", func(t *testing.T) {
+		mockJWT.Mock.On("ParseToken", mock.Anything).Return(map[string]interface{}{
+			"type":    "robot go",
+			"user_id": 10,
+			"iat":     time.Now().Unix(),
+			"eat":     time.Now().AddDate(0, 0, 7).Unix(),
+		}, nil).Once()
+
+		res, err := middleware.Authenticate("token", "device-id")
+		assert.Error(t, err)
+		t.Logf("response : %v", res)
+		t.Logf("err : %v", err)
+	})
+
+	t.Run("error fetch user device", func(t *testing.T) {
 		mockJWT.Mock.On("ParseToken", mock.Anything).Return(payload, nil).Once()
-		mockRepository.Mock.On("FindUserDevice", &c.UserManagement, mock.Anything, mock.Anything).Return(&contract.UserDeviceModel{}, errors.New("inteded error")).Once()
+		mockRepository.Mock.On("FindUserDevice", &c.UserManagement, mock.Anything, mock.Anything).Return(&contract.UserDeviceModel{}, errFoo).Once()
+
 		res, err := middleware.Authenticate("token", "device-id")
 		assert.Error(t, err)
 		t.Logf("response : %v", res)
@@ -121,86 +165,53 @@ func TestAuthenticate(t *testing.T) {
 	t.Run("user device not found", func(t *testing.T) {
 		mockJWT.Mock.On("ParseToken", mock.Anything).Return(payload, nil).Once()
 		mockRepository.Mock.On("FindUserDevice", &c.UserManagement, mock.Anything, mock.Anything).Return(&contract.UserDeviceModel{}, nil).Once()
+
 		res, err := middleware.Authenticate("token", "device-id")
 		assert.Error(t, err)
 		t.Logf("response : %v", res)
 		t.Logf("err : %v", err)
 	})
 
-	t.Run("error get login session", func(t *testing.T) {
+	t.Run("error fetch login session", func(t *testing.T) {
 		mockJWT.Mock.On("ParseToken", mock.Anything).Return(payload, nil).Once()
-		mockRepository.Mock.On("FindUserDevice", &c.UserManagement, mock.Anything, mock.Anything).Return(&contract.UserDeviceModel{
-			ID:       1,
-			DeviceID: "device-id",
-			UserID:   1,
-			UserType: "admin",
-		}, nil).Once()
-		mockRepository.Mock.On("FindOneLoginSession", &c.UserManagement, mock.Anything).Return(&contract.LoginModel{}, errors.New("intended error")).Once()
+		mockRepository.Mock.On("FindUserDevice", &c.UserManagement, mock.Anything, mock.Anything).Return(userDevice, nil).Once()
+		mockRepository.Mock.On("FindOneLoginSession", &c.UserManagement, mock.Anything).Return(&contract.LoginModel{}, errFoo).Once()
+
 		res, err := middleware.Authenticate("token", "device-id")
 		assert.Error(t, err)
 		t.Logf("response : %v", res)
 		t.Logf("err : %v", err)
 	})
 
-	t.Run("loggin session not found", func(t *testing.T) {
+	t.Run("login session not found", func(t *testing.T) {
 		mockJWT.Mock.On("ParseToken", mock.Anything).Return(payload, nil).Once()
-		mockRepository.Mock.On("FindUserDevice", &c.UserManagement, mock.Anything, mock.Anything).Return(&contract.UserDeviceModel{
-			ID:       1,
-			DeviceID: "device-id",
-			UserID:   1,
-			UserType: "admin",
-		}, nil).Once()
+		mockRepository.Mock.On("FindUserDevice", &c.UserManagement, mock.Anything, mock.Anything).Return(userDevice, nil).Once()
 		mockRepository.Mock.On("FindOneLoginSession", &c.UserManagement, mock.Anything).Return(&contract.LoginModel{}, nil).Once()
+
 		res, err := middleware.Authenticate("token", "device-id")
 		assert.Error(t, err)
 		t.Logf("response : %v", res)
 		t.Logf("err : %v", err)
 	})
 
-	t.Run("error get user data", func(t *testing.T) {
+	t.Run("error fetch user", func(t *testing.T) {
 		mockJWT.Mock.On("ParseToken", mock.Anything).Return(payload, nil).Once()
-		mockRepository.Mock.On("FindUserDevice", &c.UserManagement, mock.Anything, mock.Anything).Return(&contract.UserDeviceModel{
-			ID:       1,
-			DeviceID: "device-id",
-			UserID:   1,
-			UserType: "admin",
-		}, nil).Once()
-		mockRepository.Mock.On("FindOneLoginSession", &c.UserManagement, mock.Anything).Return(&contract.LoginModel{
-			ID:            1,
-			Token:         "token",
-			Credential:    "user@gmail.com",
-			Type:          "admin",
-			DeviceID:      "device-id",
-			LoginAt:       time.Now().Unix(),
-			AttemptAt:     time.Now().Unix(),
-			FailedCounter: 1,
-		}, nil).Once()
-		mockRepository.Mock.On("FindOneUser", &c.UserManagement, mock.Anything).Return(&contract.UserModel{}, errors.New("inteded error")).Once()
+		mockRepository.Mock.On("FindUserDevice", &c.UserManagement, mock.Anything, mock.Anything).Return(userDevice, nil).Once()
+		mockRepository.Mock.On("FindOneLoginSession", &c.UserManagement, mock.Anything).Return(login, nil).Once()
+		mockRepository.Mock.On("FindOneUser", &c.UserManagement, mock.Anything).Return(&contract.UserModel{}, errFoo).Once()
+
 		res, err := middleware.Authenticate("token", "device-id")
 		assert.Error(t, err)
 		t.Logf("response : %v", res)
 		t.Logf("err : %v", err)
 	})
 
-	t.Run("error get user data", func(t *testing.T) {
+	t.Run("user not found", func(t *testing.T) {
 		mockJWT.Mock.On("ParseToken", mock.Anything).Return(payload, nil).Once()
-		mockRepository.Mock.On("FindUserDevice", &c.UserManagement, mock.Anything, mock.Anything).Return(&contract.UserDeviceModel{
-			ID:       1,
-			DeviceID: "device-id",
-			UserID:   1,
-			UserType: "admin",
-		}, nil).Once()
-		mockRepository.Mock.On("FindOneLoginSession", &c.UserManagement, mock.Anything).Return(&contract.LoginModel{
-			ID:            1,
-			Token:         "token",
-			Credential:    "user@gmail.com",
-			Type:          "admin",
-			DeviceID:      "device-id",
-			LoginAt:       time.Now().Unix(),
-			AttemptAt:     time.Now().Unix(),
-			FailedCounter: 1,
-		}, nil).Once()
+		mockRepository.Mock.On("FindUserDevice", &c.UserManagement, mock.Anything, mock.Anything).Return(userDevice, nil).Once()
+		mockRepository.Mock.On("FindOneLoginSession", &c.UserManagement, mock.Anything).Return(login, nil).Once()
 		mockRepository.Mock.On("FindOneUser", &c.UserManagement, mock.Anything).Return(&contract.UserModel{}, nil).Once()
+
 		res, err := middleware.Authenticate("token", "device-id")
 		assert.Error(t, err)
 		t.Logf("response : %v", res)
@@ -209,33 +220,12 @@ func TestAuthenticate(t *testing.T) {
 
 	t.Run("success authentication operation", func(t *testing.T) {
 		mockJWT.Mock.On("ParseToken", mock.Anything).Return(payload, nil).Once()
-		mockRepository.Mock.On("FindUserDevice", &c.UserManagement, mock.Anything, mock.Anything).Return(&contract.UserDeviceModel{
-			ID:       1,
-			DeviceID: "device-id",
-			UserID:   1,
-			UserType: "admin",
-		}, nil).Once()
-		mockRepository.Mock.On("FindOneLoginSession", &c.UserManagement, mock.Anything).Return(&contract.LoginModel{
-			ID:            1,
-			Token:         "token",
-			Credential:    "user@gmail.com",
-			Type:          "admin",
-			DeviceID:      "device-id",
-			LoginAt:       time.Now().Unix(),
-			AttemptAt:     time.Now().Unix(),
-			FailedCounter: 1,
-		}, nil).Once()
-		mockRepository.Mock.On("FindOneUser", &c.UserManagement, mock.Anything).Return(&contract.UserModel{
-			ID:           1,
-			Username:     "user1",
-			Email:        "user1@gmail.com",
-			Password:     "aspidua98shas",
-			PhotoProfile: "pp/a.jpg",
-			PhoneNumber:  "081121213244",
-		}, nil).Once()
+		mockRepository.Mock.On("FindUserDevice", &c.UserManagement, mock.Anything, mock.Anything).Return(userDevice, nil).Once()
+		mockRepository.Mock.On("FindOneLoginSession", &c.UserManagement, mock.Anything).Return(login, nil).Once()
+		mockRepository.Mock.On("FindOneUser", &c.UserManagement, mock.Anything).Return(user, nil).Once()
+
 		res, err := middleware.Authenticate("token", "device-id")
 		assert.NoError(t, err)
 		t.Logf("response : %v", res)
-		t.Logf("err : %v", err)
 	})
 }

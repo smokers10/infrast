@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -111,7 +112,6 @@ func TestReader(t *testing.T) {
 			assert.NotEmpty(t, c.Login.DeviceIDProperty)
 			assert.NotEmpty(t, c.Login.LoginBlockDuration)
 			assert.NotEmpty(t, c.Login.AttemptAtProperty)
-			assert.NotEmpty(t, c.Login.EmailTemplatePath)
 		})
 
 		t.Run("Registration Check", func(t *testing.T) {
@@ -120,7 +120,6 @@ func TestReader(t *testing.T) {
 			assert.NotEmpty(t, c.Registration.TableName)
 			assert.NotEmpty(t, c.Registration.CredentialProperty)
 			assert.NotEmpty(t, c.Registration.RegistrationStatusProperty)
-			assert.NotEmpty(t, c.Registration.EmailTemplatePath)
 			assert.NotEmpty(t, c.Registration.DeviceIDProperty)
 			assert.NotEmpty(t, c.Registration.UserTypeProperty)
 			assert.NotEmpty(t, c.Registration.IDProperty)
@@ -133,7 +132,6 @@ func TestReader(t *testing.T) {
 			assert.NotEmpty(t, c.ResetPassword.TableName)
 			assert.NotEmpty(t, c.ResetPassword.TokenProperty)
 			assert.NotEmpty(t, c.ResetPassword.ValidityDuration)
-			assert.NotEmpty(t, c.ResetPassword.EmailTemplatePath)
 			assert.NotEmpty(t, c.ResetPassword.IDProperty)
 			assert.NotEmpty(t, c.ResetPassword.UserTypeProperty)
 			assert.NotEmpty(t, c.ResetPassword.CredentialProperty)
@@ -145,7 +143,6 @@ func TestReader(t *testing.T) {
 			assert.NotEmpty(t, c.UserDevice.TableName)
 			assert.NotEmpty(t, c.UserDevice.UserIDProperty)
 			assert.NotEmpty(t, c.UserDevice.UserTypeProperty)
-			assert.NotEmpty(t, c.UserDevice.EmailTemplatePath)
 		})
 
 		t.Run("User FCM token", func(t *testing.T) {
@@ -154,6 +151,24 @@ func TestReader(t *testing.T) {
 			assert.NotEmpty(t, c.UserFCMToken.TimestampProperty)
 			assert.NotEmpty(t, c.UserFCMToken.TokenProperty)
 			assert.NotEmpty(t, c.UserFCMToken.UserTypeProperty)
+			assert.NotEmpty(t, c.UserFCMToken.UserIDProperty)
+		})
+
+		t.Run("Message Template", func(t *testing.T) {
+			c := c.MessageTemplate
+			assert.NotEmpty(t, c.ForgotPasswordEmailTemplatePath)
+			assert.NotEmpty(t, c.ForgotPasswordMessageTemplate)
+			assert.NotEmpty(t, c.NewDeviceWarningEmailTemplatePath)
+			assert.NotEmpty(t, c.NewDeviceWarningMessageTemplate)
+			assert.NotEmpty(t, c.NewRegistrationEmailTemplatePath)
+			assert.NotEmpty(t, c.NewRegistrationMessageTemplate)
+			assert.NotEmpty(t, c.LoginCancelationURL)
+			t.Logf("new registration email path : %v", c.NewRegistrationEmailTemplatePath)
+			t.Logf("new device email path : %v", c.NewDeviceWarningEmailTemplatePath)
+			t.Logf("forgot password email path: %v", c.ForgotPasswordEmailTemplatePath)
+			t.Logf("new registration template message : %v", fmt.Sprintf(c.NewRegistrationMessageTemplate, "ABC123"))
+			t.Logf("new device template message : %v", fmt.Sprintf(c.NewDeviceWarningMessageTemplate, "https://yousecureweb.com/cancel-login/<user-id>/<device-id>"))
+			t.Logf("forgot password message : %v", fmt.Sprintf(c.ForgotPasswordMessageTemplate, "ABC456"))
 		})
 	})
 }
