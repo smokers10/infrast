@@ -1187,7 +1187,7 @@ func TestLogin(t *testing.T) {
 		t.Log(err.Error())
 	})
 
-	t.Run("success login operation", func(t *testing.T) {
+	t.Run("error complete login session", func(t *testing.T) {
 		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{
 			ID:           1,
 			Username:     mock.Anything,
@@ -1209,12 +1209,45 @@ func TestLogin(t *testing.T) {
 		mockEncryption.Mock.On("Compare", mock.Anything, mock.Anything).Return(true).Once()
 		mockRepository.Mock.On("UpdateLoginFailedAttempt", &configuration.UserManagement, mock.Anything, mock.Anything).Return(nil).Once()
 		mockJWT.Mock.On("Sign", mock.Anything).Return("asu", nil).Once()
+		mockRepository.Mock.On("CompleteLoginSession", &configuration.UserManagement, mock.Anything, mock.Anything, mock.Anything).Return(errFoo).Once()
+
+		user, token, status, err := userManagement.Login("donadona@gmail.com", mock.Anything, "device-123")
+		assert.Empty(t, user)
+		assert.Empty(t, token)
+		assert.Equal(t, 500, status)
+		assert.NotEmpty(t, err)
+		t.Log(err.Error())
+	})
+
+	t.Run("success login", func(t *testing.T) {
+		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{
+			ID:           1,
+			Username:     mock.Anything,
+			Email:        mock.Anything,
+			Password:     mock.Anything,
+			PhotoProfile: mock.Anything,
+			PhoneNumber:  mock.Anything,
+		}, nil).Once()
+		mockRepository.Mock.On("FindUserDevice", &configuration.UserManagement, mock.Anything, mock.Anything).Return(&contract.UserDeviceModel{
+			ID:       1,
+			DeviceID: mock.Anything,
+			UserID:   2,
+			UserType: mock.Anything,
+		}, nil).Once()
+		mockRepository.Mock.On("FindOneLoginSession", &configuration.UserManagement, mock.Anything).Return(&contract.LoginModel{ID: 1, Credential: "user123", FailedCounter: 1, AttemptAt: time.Now().Unix()}, nil).Once()
+		mockRepository.Mock.On("UpdateLoginCredential", &configuration.UserManagement, mock.Anything, mock.Anything).Return(nil).Once()
+		mockRepository.Mock.On("UpdateLoginFailedAttempt", &configuration.UserManagement, mock.Anything, 0).Return(errors.New("intended error")).Once()
+		mockRepository.Mock.On("FindOneRegistrationByCredential", &configuration.UserManagement, mock.Anything).Return(&contract.RegistrationModel{RegistrationStatus: "verified"}, nil).Once()
+		mockEncryption.Mock.On("Compare", mock.Anything, mock.Anything).Return(true).Once()
+		mockRepository.Mock.On("UpdateLoginFailedAttempt", &configuration.UserManagement, mock.Anything, mock.Anything).Return(nil).Once()
+		mockJWT.Mock.On("Sign", mock.Anything).Return("asu", nil).Once()
+		mockRepository.Mock.On("CompleteLoginSession", &configuration.UserManagement, mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
 
 		user, token, status, err := userManagement.Login("donadona@gmail.com", mock.Anything, "device-123")
 		assert.NotEmpty(t, user)
 		assert.NotEmpty(t, token)
 		assert.Equal(t, 200, status)
-		assert.Empty(t, err)
+		assert.NoError(t, err)
 	})
 }
 
@@ -1225,7 +1258,7 @@ func TestRegisterNewAccount(t *testing.T) {
 	}
 
 	t.Run("empty credential", func(t *testing.T) {
-		token, status, err := userManagement.RegisterNewAccount("", mock.Anything)
+		token, status, err := userManagement.RegisterNewAccount("", mock.Anything, mock.Anything)
 		assert.Empty(t, token)
 		assert.Equal(t, http.StatusBadRequest, status)
 		assert.NotEmpty(t, err)
@@ -1233,7 +1266,15 @@ func TestRegisterNewAccount(t *testing.T) {
 	})
 
 	t.Run("empty device id", func(t *testing.T) {
-		token, status, err := userManagement.RegisterNewAccount("dona@gmail.com", "")
+		token, status, err := userManagement.RegisterNewAccount("dona@gmail.com", "", "fcm-token")
+		assert.Empty(t, token)
+		assert.Equal(t, http.StatusBadRequest, status)
+		assert.NotEmpty(t, err)
+		t.Log(err.Error())
+	})
+
+	t.Run("empty fcm id", func(t *testing.T) {
+		token, status, err := userManagement.RegisterNewAccount("dona@gmail.com", "device-id", "")
 		assert.Empty(t, token)
 		assert.Equal(t, http.StatusBadRequest, status)
 		assert.NotEmpty(t, err)
@@ -1243,7 +1284,7 @@ func TestRegisterNewAccount(t *testing.T) {
 	t.Run("error find user", func(t *testing.T) {
 		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{}, errors.New("intended error")).Once()
 
-		token, status, err := userManagement.RegisterNewAccount("dona@gmail.com", mock.Anything)
+		token, status, err := userManagement.RegisterNewAccount("dona@gmail.com", mock.Anything, mock.Anything)
 		assert.Empty(t, token)
 		assert.Equal(t, http.StatusInternalServerError, status)
 		assert.NotEmpty(t, err)
@@ -1260,7 +1301,7 @@ func TestRegisterNewAccount(t *testing.T) {
 			PhoneNumber:  mock.Anything,
 		}, nil).Once()
 
-		token, status, err := userManagement.RegisterNewAccount("dona@gmail.com", mock.Anything)
+		token, status, err := userManagement.RegisterNewAccount("dona@gmail.com", mock.Anything, mock.Anything)
 		assert.Empty(t, token)
 		assert.Equal(t, http.StatusUnauthorized, status)
 		assert.NotEmpty(t, err)
@@ -1271,7 +1312,7 @@ func TestRegisterNewAccount(t *testing.T) {
 		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{}, nil).Once()
 		mockIdentifier.Mock.On("GenerateOTP").Return("", errors.New("intended error")).Once()
 
-		token, status, err := userManagement.RegisterNewAccount("dona@gmail.com", mock.Anything)
+		token, status, err := userManagement.RegisterNewAccount("dona@gmail.com", mock.Anything, mock.Anything)
 		assert.Empty(t, token)
 		assert.Equal(t, http.StatusInternalServerError, status)
 		assert.NotEmpty(t, err)
@@ -1283,7 +1324,7 @@ func TestRegisterNewAccount(t *testing.T) {
 		mockIdentifier.Mock.On("GenerateOTP").Return("123456", nil).Once()
 		mockIdentifier.Mock.On("MakeIdentifier").Return("", errors.New("intended error")).Once()
 
-		token, status, err := userManagement.RegisterNewAccount("dona@gmail.com", mock.Anything)
+		token, status, err := userManagement.RegisterNewAccount("dona@gmail.com", mock.Anything, mock.Anything)
 		assert.Empty(t, token)
 		assert.Equal(t, http.StatusInternalServerError, status)
 		assert.NotEmpty(t, err)
@@ -1297,7 +1338,7 @@ func TestRegisterNewAccount(t *testing.T) {
 		mockEncryption.Mock.On("Hash", mock.Anything).Return(mock.Anything).Once()
 		mockRepository.Mock.On("FindOneRegistrationByCredential", &configuration.UserManagement, mock.Anything).Return(&contract.RegistrationModel{}, errors.New("intended error")).Once()
 
-		token, status, err := userManagement.RegisterNewAccount("dona@gmail.com", mock.Anything)
+		token, status, err := userManagement.RegisterNewAccount("dona@gmail.com", mock.Anything, mock.Anything)
 		assert.Empty(t, token)
 		assert.Equal(t, http.StatusInternalServerError, status)
 		assert.NotEmpty(t, err)
@@ -1319,28 +1360,24 @@ func TestRegisterNewAccount(t *testing.T) {
 			RegistrationStatus: mock.Anything,
 			DeviceID:           mock.Anything,
 		}, nil).Once()
-		mockRepository.Mock.On("UpdateRegistration", &configuration.UserManagement, mock.Anything, mock.Anything,
-			mock.Anything, mock.Anything, mock.Anything).Return(errors.New("intended error")).
-			Once()
+		mockRepository.Mock.On("UpdateRegistration", &configuration.UserManagement, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(errors.New("intended error")).Once()
 
-		token, status, err := userManagement.RegisterNewAccount("dona@gmail.com", mock.Anything)
+		token, status, err := userManagement.RegisterNewAccount("dona@gmail.com", mock.Anything, mock.Anything)
 		assert.Empty(t, token)
 		assert.Equal(t, http.StatusInternalServerError, status)
 		assert.NotEmpty(t, err)
 		t.Log(err.Error())
 	})
 
-	t.Run("error create registration data", func(t *testing.T) {
+	t.Run("error create registration", func(t *testing.T) {
 		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{}, nil).Once()
 		mockIdentifier.Mock.On("GenerateOTP").Return("123456", nil).Once()
 		mockIdentifier.Mock.On("MakeIdentifier").Return("TOKEN", nil).Once()
 		mockEncryption.Mock.On("Hash", mock.Anything).Return(mock.Anything).Once()
 		mockRepository.Mock.On("FindOneRegistrationByCredential", &configuration.UserManagement, mock.Anything).Return(&contract.RegistrationModel{}, nil).Once()
-		mockRepository.Mock.On("CreateRegistration", &configuration.UserManagement, mock.Anything, mock.Anything,
-			mock.Anything, mock.Anything, mock.Anything).Return(errors.New("intended error")).
-			Once()
+		mockRepository.Mock.On("CreateRegistration", &configuration.UserManagement, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(errors.New("intended error")).Once()
 
-		token, status, err := userManagement.RegisterNewAccount("dona@gmail.com", mock.Anything)
+		token, status, err := userManagement.RegisterNewAccount("dona@gmail.com", mock.Anything, mock.Anything)
 		assert.Empty(t, token)
 		assert.Equal(t, http.StatusInternalServerError, status)
 		assert.NotEmpty(t, err)
@@ -1353,12 +1390,10 @@ func TestRegisterNewAccount(t *testing.T) {
 		mockIdentifier.Mock.On("MakeIdentifier").Return("TOKEN", nil).Once()
 		mockEncryption.Mock.On("Hash", mock.Anything).Return(mock.Anything).Once()
 		mockRepository.Mock.On("FindOneRegistrationByCredential", &configuration.UserManagement, mock.Anything).Return(&contract.RegistrationModel{}, nil).Once()
-		mockRepository.Mock.On("CreateRegistration", &configuration.UserManagement, mock.Anything, mock.Anything,
-			mock.Anything, mock.Anything, mock.Anything).Return(nil).
-			Once()
+		mockRepository.Mock.On("CreateRegistration", &configuration.UserManagement, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
 		mockTemplateProcessor.Mock.On("EmailTemplate", mock.Anything, mock.Anything).Return("template", errors.New("intended error")).Once()
 
-		token, status, err := userManagement.RegisterNewAccount("dona@gmail.com", mock.Anything)
+		token, status, err := userManagement.RegisterNewAccount("dona@gmail.com", mock.Anything, mock.Anything)
 		assert.Empty(t, token)
 		assert.Equal(t, http.StatusInternalServerError, status)
 		assert.NotEmpty(t, err)
@@ -1371,13 +1406,11 @@ func TestRegisterNewAccount(t *testing.T) {
 		mockIdentifier.Mock.On("MakeIdentifier").Return("TOKEN", nil).Once()
 		mockEncryption.Mock.On("Hash", mock.Anything).Return(mock.Anything).Once()
 		mockRepository.Mock.On("FindOneRegistrationByCredential", &configuration.UserManagement, mock.Anything).Return(&contract.RegistrationModel{}, nil).Once()
-		mockRepository.Mock.On("CreateRegistration", &configuration.UserManagement, mock.Anything, mock.Anything,
-			mock.Anything, mock.Anything, mock.Anything).Return(nil).
-			Once()
+		mockRepository.Mock.On("CreateRegistration", &configuration.UserManagement, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
 		mockTemplateProcessor.Mock.On("EmailTemplate", mock.Anything, mock.Anything).Return("template", nil).Once()
 		mockMailer.Mock.On("Send", mock.Anything, mock.Anything, mock.Anything).Return(errors.New("intended error")).Once()
 
-		token, status, err := userManagement.RegisterNewAccount("dona@gmail.com", mock.Anything)
+		token, status, err := userManagement.RegisterNewAccount("dona@gmail.com", mock.Anything, mock.Anything)
 		assert.Empty(t, token)
 		assert.Equal(t, http.StatusInternalServerError, status)
 		assert.NotEmpty(t, err)
@@ -1390,13 +1423,11 @@ func TestRegisterNewAccount(t *testing.T) {
 		mockIdentifier.Mock.On("MakeIdentifier").Return("TOKEN", nil).Once()
 		mockEncryption.Mock.On("Hash", mock.Anything).Return(mock.Anything).Once()
 		mockRepository.Mock.On("FindOneRegistrationByCredential", &configuration.UserManagement, mock.Anything).Return(&contract.RegistrationModel{}, nil).Once()
-		mockRepository.Mock.On("CreateRegistration", &configuration.UserManagement, mock.Anything, mock.Anything,
-			mock.Anything, mock.Anything, mock.Anything).Return(nil).
-			Once()
+		mockRepository.Mock.On("CreateRegistration", &configuration.UserManagement, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
 		mockTemplateProcessor.Mock.On("EmailTemplate", mock.Anything, mock.Anything).Return("template", nil).Once()
 		mockMailer.Mock.On("Send", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
 
-		token, status, err := userManagement.RegisterNewAccount("dona@gmail.com", mock.Anything)
+		token, status, err := userManagement.RegisterNewAccount("dona@gmail.com", mock.Anything, mock.Anything)
 		assert.NotEmpty(t, token)
 		assert.Equal(t, 200, status)
 		assert.NoError(t, err)
@@ -1412,7 +1443,7 @@ func TestRegisterNewAccountWithPhoneNumber(t *testing.T) {
 	phoneNumbers := "+628112123244"
 
 	t.Run("error parse phone number", func(t *testing.T) {
-		token, status, err := userManagement.RegisterNewAccount("08223", mock.Anything)
+		token, status, err := userManagement.RegisterNewAccount("08223", mock.Anything, mock.Anything)
 		assert.Empty(t, token)
 		assert.Equal(t, http.StatusBadRequest, status)
 		assert.NotEmpty(t, err)
@@ -1422,7 +1453,7 @@ func TestRegisterNewAccountWithPhoneNumber(t *testing.T) {
 	t.Run("error find user", func(t *testing.T) {
 		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{}, errors.New("intended error")).Once()
 
-		token, status, err := userManagement.RegisterNewAccount(phoneNumbers, mock.Anything)
+		token, status, err := userManagement.RegisterNewAccount(phoneNumbers, mock.Anything, mock.Anything)
 		assert.Empty(t, token)
 		assert.Equal(t, http.StatusInternalServerError, status)
 		assert.NotEmpty(t, err)
@@ -1439,7 +1470,7 @@ func TestRegisterNewAccountWithPhoneNumber(t *testing.T) {
 			PhoneNumber:  mock.Anything,
 		}, nil).Once()
 
-		token, status, err := userManagement.RegisterNewAccount(phoneNumbers, mock.Anything)
+		token, status, err := userManagement.RegisterNewAccount(phoneNumbers, mock.Anything, mock.Anything)
 		assert.Empty(t, token)
 		assert.Equal(t, http.StatusUnauthorized, status)
 		assert.NotEmpty(t, err)
@@ -1450,7 +1481,7 @@ func TestRegisterNewAccountWithPhoneNumber(t *testing.T) {
 		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{}, nil).Once()
 		mockIdentifier.Mock.On("GenerateOTP").Return("", errors.New("intended error")).Once()
 
-		token, status, err := userManagement.RegisterNewAccount(phoneNumbers, mock.Anything)
+		token, status, err := userManagement.RegisterNewAccount(phoneNumbers, mock.Anything, mock.Anything)
 		assert.Empty(t, token)
 		assert.Equal(t, http.StatusInternalServerError, status)
 		assert.NotEmpty(t, err)
@@ -1462,7 +1493,7 @@ func TestRegisterNewAccountWithPhoneNumber(t *testing.T) {
 		mockIdentifier.Mock.On("GenerateOTP").Return("123456", nil).Once()
 		mockIdentifier.Mock.On("MakeIdentifier").Return("", errors.New("intended error")).Once()
 
-		token, status, err := userManagement.RegisterNewAccount(phoneNumbers, mock.Anything)
+		token, status, err := userManagement.RegisterNewAccount(phoneNumbers, mock.Anything, mock.Anything)
 		assert.Empty(t, token)
 		assert.Equal(t, http.StatusInternalServerError, status)
 		assert.NotEmpty(t, err)
@@ -1476,7 +1507,7 @@ func TestRegisterNewAccountWithPhoneNumber(t *testing.T) {
 		mockEncryption.Mock.On("Hash", mock.Anything).Return(mock.Anything).Once()
 		mockRepository.Mock.On("FindOneRegistrationByCredential", &configuration.UserManagement, mock.Anything).Return(&contract.RegistrationModel{}, errors.New("intended error")).Once()
 
-		token, status, err := userManagement.RegisterNewAccount(phoneNumbers, mock.Anything)
+		token, status, err := userManagement.RegisterNewAccount(phoneNumbers, mock.Anything, mock.Anything)
 		assert.Empty(t, token)
 		assert.Equal(t, http.StatusInternalServerError, status)
 		assert.NotEmpty(t, err)
@@ -1498,11 +1529,9 @@ func TestRegisterNewAccountWithPhoneNumber(t *testing.T) {
 			RegistrationStatus: mock.Anything,
 			DeviceID:           mock.Anything,
 		}, nil).Once()
-		mockRepository.Mock.On("UpdateRegistration", &configuration.UserManagement, mock.Anything, mock.Anything,
-			mock.Anything, mock.Anything, mock.Anything).Return(errors.New("intended error")).
-			Once()
+		mockRepository.Mock.On("UpdateRegistration", &configuration.UserManagement, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(errors.New("intended error")).Once()
 
-		token, status, err := userManagement.RegisterNewAccount(phoneNumbers, mock.Anything)
+		token, status, err := userManagement.RegisterNewAccount(phoneNumbers, mock.Anything, mock.Anything)
 		assert.Empty(t, token)
 		assert.Equal(t, http.StatusInternalServerError, status)
 		assert.NotEmpty(t, err)
@@ -1515,11 +1544,9 @@ func TestRegisterNewAccountWithPhoneNumber(t *testing.T) {
 		mockIdentifier.Mock.On("MakeIdentifier").Return("TOKEN", nil).Once()
 		mockEncryption.Mock.On("Hash", mock.Anything).Return(mock.Anything).Once()
 		mockRepository.Mock.On("FindOneRegistrationByCredential", &configuration.UserManagement, mock.Anything).Return(&contract.RegistrationModel{}, nil).Once()
-		mockRepository.Mock.On("CreateRegistration", &configuration.UserManagement, mock.Anything, mock.Anything,
-			mock.Anything, mock.Anything, mock.Anything).Return(errors.New("intended error")).
-			Once()
+		mockRepository.Mock.On("CreateRegistration", &configuration.UserManagement, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(errors.New("intended error")).Once()
 
-		token, status, err := userManagement.RegisterNewAccount(phoneNumbers, mock.Anything)
+		token, status, err := userManagement.RegisterNewAccount(phoneNumbers, mock.Anything, mock.Anything)
 		assert.Empty(t, token)
 		assert.Equal(t, http.StatusInternalServerError, status)
 		assert.NotEmpty(t, err)
@@ -1532,10 +1559,10 @@ func TestRegisterNewAccountWithPhoneNumber(t *testing.T) {
 		mockIdentifier.Mock.On("MakeIdentifier").Return("TOKEN", nil).Once()
 		mockEncryption.Mock.On("Hash", mock.Anything).Return(mock.Anything).Once()
 		mockRepository.Mock.On("FindOneRegistrationByCredential", &configuration.UserManagement, mock.Anything).Return(&contract.RegistrationModel{}, nil).Once()
-		mockRepository.Mock.On("CreateRegistration", &configuration.UserManagement, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
+		mockRepository.Mock.On("CreateRegistration", &configuration.UserManagement, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
 		mockWhatsapp.Mock.On("SendMessage", mock.Anything, mock.Anything).Return(errors.New("intended error")).Once()
 
-		token, status, err := userManagement.RegisterNewAccount(phoneNumbers, mock.Anything)
+		token, status, err := userManagement.RegisterNewAccount(phoneNumbers, mock.Anything, mock.Anything)
 		assert.Empty(t, token)
 		assert.Equal(t, http.StatusInternalServerError, status)
 		assert.NotEmpty(t, err)
@@ -1548,10 +1575,10 @@ func TestRegisterNewAccountWithPhoneNumber(t *testing.T) {
 		mockIdentifier.Mock.On("MakeIdentifier").Return("TOKEN", nil).Once()
 		mockEncryption.Mock.On("Hash", mock.Anything).Return(mock.Anything).Once()
 		mockRepository.Mock.On("FindOneRegistrationByCredential", &configuration.UserManagement, mock.Anything).Return(&contract.RegistrationModel{}, nil).Once()
-		mockRepository.Mock.On("CreateRegistration", &configuration.UserManagement, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
+		mockRepository.Mock.On("CreateRegistration", &configuration.UserManagement, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
 		mockWhatsapp.Mock.On("SendMessage", mock.Anything, mock.Anything).Return(nil).Once()
 
-		token, status, err := userManagement.RegisterNewAccount(phoneNumbers, mock.Anything)
+		token, status, err := userManagement.RegisterNewAccount(phoneNumbers, mock.Anything, mock.Anything)
 		assert.NotEmpty(t, token)
 		assert.Equal(t, 200, status)
 		assert.NoError(t, err)
@@ -1573,7 +1600,7 @@ func TestRegisterNewAccountWithUncertainCredential(t *testing.T) {
 
 		for _, v := range uncertainCredentials {
 			t.Run(fmt.Sprintf("testing %s", v), func(t *testing.T) {
-				token, status, err := userManagement.RegisterNewAccount("duar-teu-puguh", mock.Anything)
+				token, status, err := userManagement.RegisterNewAccount("duar-teu-puguh", mock.Anything, mock.Anything)
 				assert.Empty(t, token)
 				assert.Equal(t, 400, status)
 				assert.NotEmpty(t, err)
@@ -1655,18 +1682,19 @@ func TestRegisterVerification(t *testing.T) {
 	})
 }
 
-func TestRegistrationBioData(t *testing.T) {
+func TestCompleteRegistration(t *testing.T) {
 	userManagement, err := UserManagement(&configuration, &mockRepository, &mockIdentifier, &mockEncryption, &mockJWT, &mockMailer, &mockWhatsapp, &mockTemplateProcessor, "Admin")
 	if err != nil {
 		t.Fatal(err.Error())
 	}
+
 	DynamicColVal := contract.DynamicColumnValue{
 		Column: "(username, email, phone, address)",
 		Value:  []string{"user123", "user@gmail.com", "08112123244", "Jl. TB Depan No.79B"},
 	}
 
 	t.Run("incomplete required data", func(t *testing.T) {
-		user, token, status, err := userManagement.RegistrationBioData("08112123244", nil)
+		user, token, status, err := userManagement.CompleteRegistration("08112123244", nil)
 		assert.Empty(t, user)
 		assert.Empty(t, token)
 		assert.Equal(t, 400, status)
@@ -1674,10 +1702,28 @@ func TestRegistrationBioData(t *testing.T) {
 		t.Log(err.Error())
 	})
 
-	t.Run("error find one user", func(t *testing.T) {
-		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{}, errors.New("intended error")).Once()
+	t.Run("invalid email", func(t *testing.T) {
+		user, token, status, err := userManagement.CompleteRegistration("guiltfree@doyoksuroyok.com", &DynamicColVal)
+		assert.Empty(t, user)
+		assert.Empty(t, token)
+		assert.Equal(t, 400, status)
+		assert.NotEmpty(t, err)
+		t.Log(err.Error())
+	})
 
-		user, token, status, err := userManagement.RegistrationBioData("08112123244", &DynamicColVal)
+	t.Run("invalid phone numbers", func(t *testing.T) {
+		user, token, status, err := userManagement.CompleteRegistration("08112123266", &DynamicColVal)
+		assert.Empty(t, user)
+		assert.Empty(t, token)
+		assert.Equal(t, 400, status)
+		assert.NotEmpty(t, err)
+		t.Log(err.Error())
+	})
+
+	t.Run("error fond one user", func(t *testing.T) {
+		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{}, errFoo).Once()
+
+		user, token, status, err := userManagement.CompleteRegistration("guiltfree@gmail.com", &DynamicColVal)
 		assert.Empty(t, user)
 		assert.Empty(t, token)
 		assert.Equal(t, 500, status)
@@ -1685,10 +1731,10 @@ func TestRegistrationBioData(t *testing.T) {
 		t.Log(err.Error())
 	})
 
-	t.Run("user already exists", func(t *testing.T) {
+	t.Run("user already registered", func(t *testing.T) {
 		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{ID: 1}, nil).Once()
 
-		user, token, status, err := userManagement.RegistrationBioData("08112123244", &DynamicColVal)
+		user, token, status, err := userManagement.CompleteRegistration("guiltfree@gmail.com", &DynamicColVal)
 		assert.Empty(t, user)
 		assert.Empty(t, token)
 		assert.Equal(t, 400, status)
@@ -1696,11 +1742,11 @@ func TestRegistrationBioData(t *testing.T) {
 		t.Log(err.Error())
 	})
 
-	t.Run("error find registration data", func(t *testing.T) {
+	t.Run("error find registration by creditial", func(t *testing.T) {
 		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{}, nil).Once()
-		mockRepository.Mock.On("FindOneRegistrationByCredential", &configuration.UserManagement, mock.Anything).Return(&contract.RegistrationModel{}, errors.New("intended errors")).Once()
+		mockRepository.Mock.On("FindOneRegistrationByCredential", &configuration.UserManagement, mock.Anything).Return(&contract.RegistrationModel{}, errFoo).Once()
 
-		user, token, status, err := userManagement.RegistrationBioData("08112123244", &DynamicColVal)
+		user, token, status, err := userManagement.CompleteRegistration("guiltfree@gmail.com", &DynamicColVal)
 		assert.Empty(t, user)
 		assert.Empty(t, token)
 		assert.Equal(t, 500, status)
@@ -1708,11 +1754,11 @@ func TestRegistrationBioData(t *testing.T) {
 		t.Log(err.Error())
 	})
 
-	t.Run("registration data not exists", func(t *testing.T) {
+	t.Run("registration not found", func(t *testing.T) {
 		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{}, nil).Once()
 		mockRepository.Mock.On("FindOneRegistrationByCredential", &configuration.UserManagement, mock.Anything).Return(&contract.RegistrationModel{}, nil).Once()
 
-		user, token, status, err := userManagement.RegistrationBioData("08112123244", &DynamicColVal)
+		user, token, status, err := userManagement.CompleteRegistration("guiltfree@gmail.com", &DynamicColVal)
 		assert.Empty(t, user)
 		assert.Empty(t, token)
 		assert.Equal(t, 404, status)
@@ -1720,12 +1766,24 @@ func TestRegistrationBioData(t *testing.T) {
 		t.Log(err.Error())
 	})
 
-	t.Run("error insert user", func(t *testing.T) {
+	t.Run("unverfied registration", func(t *testing.T) {
 		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{}, nil).Once()
-		mockRepository.Mock.On("FindOneRegistrationByCredential", &configuration.UserManagement, mock.Anything).Return(&contract.RegistrationModel{ID: 1}, nil).Once()
-		mockRepository.Mock.On("StoreUser", &configuration.UserManagement, DynamicColVal.Column, DynamicColVal.Value).Return(0, errors.New("intended error")).Once()
+		mockRepository.Mock.On("FindOneRegistrationByCredential", &configuration.UserManagement, mock.Anything).Return(&contract.RegistrationModel{ID: 1, RegistrationStatus: "unverified"}, nil).Once()
 
-		user, token, status, err := userManagement.RegistrationBioData("08112123244", &DynamicColVal)
+		user, token, status, err := userManagement.CompleteRegistration("guiltfree@gmail.com", &DynamicColVal)
+		assert.Empty(t, user)
+		assert.Empty(t, token)
+		assert.Equal(t, 400, status)
+		assert.NotEmpty(t, err)
+		t.Log(err.Error())
+	})
+
+	t.Run("error store user", func(t *testing.T) {
+		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{}, nil).Once()
+		mockRepository.Mock.On("FindOneRegistrationByCredential", &configuration.UserManagement, mock.Anything).Return(&contract.RegistrationModel{ID: 1, RegistrationStatus: "verified"}, nil).Once()
+		mockRepository.Mock.On("StoreUser", &configuration.UserManagement, mock.Anything, mock.Anything).Return(0, errFoo).Once()
+
+		user, token, status, err := userManagement.CompleteRegistration("guiltfree@gmail.com", &DynamicColVal)
 		assert.Empty(t, user)
 		assert.Empty(t, token)
 		assert.Equal(t, 500, status)
@@ -1733,13 +1791,12 @@ func TestRegistrationBioData(t *testing.T) {
 		t.Log(err.Error())
 	})
 
-	t.Run("error find inserted user", func(t *testing.T) {
+	t.Run("error store user", func(t *testing.T) {
 		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{}, nil).Once()
-		mockRepository.Mock.On("FindOneRegistrationByCredential", &configuration.UserManagement, mock.Anything).Return(&contract.RegistrationModel{ID: 1}, nil).Once()
-		mockRepository.Mock.On("StoreUser", &configuration.UserManagement, DynamicColVal.Column, DynamicColVal.Value).Return(1, nil).Once()
-		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{}, errors.New("intended error")).Once()
+		mockRepository.Mock.On("FindOneRegistrationByCredential", &configuration.UserManagement, mock.Anything).Return(&contract.RegistrationModel{ID: 1, RegistrationStatus: "verified"}, nil).Once()
+		mockRepository.Mock.On("StoreUser", &configuration.UserManagement, mock.Anything, mock.Anything).Return(0, errFoo).Once()
 
-		user, token, status, err := userManagement.RegistrationBioData("08112123244", &DynamicColVal)
+		user, token, status, err := userManagement.CompleteRegistration("guiltfree@gmail.com", &DynamicColVal)
 		assert.Empty(t, user)
 		assert.Empty(t, token)
 		assert.Equal(t, 500, status)
@@ -1747,13 +1804,27 @@ func TestRegistrationBioData(t *testing.T) {
 		t.Log(err.Error())
 	})
 
-	t.Run("inserted user not found", func(t *testing.T) {
+	t.Run("error find stored user", func(t *testing.T) {
 		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{}, nil).Once()
-		mockRepository.Mock.On("FindOneRegistrationByCredential", &configuration.UserManagement, mock.Anything).Return(&contract.RegistrationModel{ID: 1}, nil).Once()
-		mockRepository.Mock.On("StoreUser", &configuration.UserManagement, DynamicColVal.Column, DynamicColVal.Value).Return(1, nil).Once()
+		mockRepository.Mock.On("FindOneRegistrationByCredential", &configuration.UserManagement, mock.Anything).Return(&contract.RegistrationModel{ID: 1, RegistrationStatus: "verified"}, nil).Once()
+		mockRepository.Mock.On("StoreUser", &configuration.UserManagement, mock.Anything, mock.Anything).Return(1, nil).Once()
+		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{}, errFoo).Once()
+
+		user, token, status, err := userManagement.CompleteRegistration("guiltfree@gmail.com", &DynamicColVal)
+		assert.Empty(t, user)
+		assert.Empty(t, token)
+		assert.Equal(t, 500, status)
+		assert.NotEmpty(t, err)
+		t.Log(err.Error())
+	})
+
+	t.Run("stored user not found", func(t *testing.T) {
+		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{}, nil).Once()
+		mockRepository.Mock.On("FindOneRegistrationByCredential", &configuration.UserManagement, mock.Anything).Return(&contract.RegistrationModel{ID: 1, RegistrationStatus: "verified"}, nil).Once()
+		mockRepository.Mock.On("StoreUser", &configuration.UserManagement, mock.Anything, mock.Anything).Return(1, nil).Once()
 		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{}, nil).Once()
 
-		user, token, status, err := userManagement.RegistrationBioData("08112123244", &DynamicColVal)
+		user, token, status, err := userManagement.CompleteRegistration("guiltfree@gmail.com", &DynamicColVal)
 		assert.Empty(t, user)
 		assert.Empty(t, token)
 		assert.Equal(t, 404, status)
@@ -1761,14 +1832,64 @@ func TestRegistrationBioData(t *testing.T) {
 		t.Log(err.Error())
 	})
 
-	t.Run("error insert user device", func(t *testing.T) {
+	t.Run("error create new user device", func(t *testing.T) {
 		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{}, nil).Once()
-		mockRepository.Mock.On("FindOneRegistrationByCredential", &configuration.UserManagement, mock.Anything).Return(&contract.RegistrationModel{ID: 1}, nil).Once()
-		mockRepository.Mock.On("StoreUser", &configuration.UserManagement, DynamicColVal.Column, DynamicColVal.Value).Return(1, nil).Once()
-		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{ID: 1}, nil).Once()
-		mockRepository.Mock.On("CreateNewUserDevice", &configuration.UserManagement, mock.Anything, mock.Anything).Return(errors.New("intended error")).Once()
+		mockRepository.Mock.On("FindOneRegistrationByCredential", &configuration.UserManagement, mock.Anything).Return(&contract.RegistrationModel{ID: 1, RegistrationStatus: "verified"}, nil).Once()
+		mockRepository.Mock.On("StoreUser", &configuration.UserManagement, mock.Anything, mock.Anything).Return(1, nil).Once()
+		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{
+			ID:           1,
+			Username:     mock.Anything,
+			Email:        mock.Anything,
+			PhotoProfile: mock.Anything,
+			PhoneNumber:  mock.Anything,
+		}, nil).Once()
+		mockRepository.Mock.On("CreateNewUserDevice", &configuration.UserManagement, mock.Anything, mock.Anything).Return(errFoo).Once()
 
-		user, token, status, err := userManagement.RegistrationBioData("08112123244", &DynamicColVal)
+		user, token, status, err := userManagement.CompleteRegistration("guiltfree@gmail.com", &DynamicColVal)
+		assert.Empty(t, user)
+		assert.Empty(t, token)
+		assert.Equal(t, 500, status)
+		assert.NotEmpty(t, err)
+		t.Log(err.Error())
+	})
+
+	t.Run("error store fcm token", func(t *testing.T) {
+		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{}, nil).Once()
+		mockRepository.Mock.On("FindOneRegistrationByCredential", &configuration.UserManagement, mock.Anything).Return(&contract.RegistrationModel{ID: 1, RegistrationStatus: "verified"}, nil).Once()
+		mockRepository.Mock.On("StoreUser", &configuration.UserManagement, mock.Anything, mock.Anything).Return(1, nil).Once()
+		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{
+			ID:           1,
+			Username:     mock.Anything,
+			Email:        mock.Anything,
+			PhotoProfile: mock.Anything,
+			PhoneNumber:  mock.Anything,
+		}, nil).Once()
+		mockRepository.Mock.On("CreateNewUserDevice", &configuration.UserManagement, mock.Anything, mock.Anything).Return(nil).Once()
+		mockRepository.Mock.On("StoreFCMToken", &configuration.UserManagement, mock.Anything, mock.Anything, mock.Anything).Return(errFoo).Once()
+
+		user, token, status, err := userManagement.CompleteRegistration("guiltfree@gmail.com", &DynamicColVal)
+		assert.Empty(t, user)
+		assert.Empty(t, token)
+		assert.Equal(t, 500, status)
+		assert.NotEmpty(t, err)
+		t.Log(err.Error())
+	})
+
+	t.Run("error store fcm token", func(t *testing.T) {
+		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{}, nil).Once()
+		mockRepository.Mock.On("FindOneRegistrationByCredential", &configuration.UserManagement, mock.Anything).Return(&contract.RegistrationModel{ID: 1, RegistrationStatus: "verified"}, nil).Once()
+		mockRepository.Mock.On("StoreUser", &configuration.UserManagement, mock.Anything, mock.Anything).Return(1, nil).Once()
+		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{
+			ID:           1,
+			Username:     mock.Anything,
+			Email:        mock.Anything,
+			PhotoProfile: mock.Anything,
+			PhoneNumber:  mock.Anything,
+		}, nil).Once()
+		mockRepository.Mock.On("CreateNewUserDevice", &configuration.UserManagement, mock.Anything, mock.Anything).Return(nil).Once()
+		mockRepository.Mock.On("StoreFCMToken", &configuration.UserManagement, mock.Anything, mock.Anything, mock.Anything).Return(errFoo).Once()
+
+		user, token, status, err := userManagement.CompleteRegistration("guiltfree@gmail.com", &DynamicColVal)
 		assert.Empty(t, user)
 		assert.Empty(t, token)
 		assert.Equal(t, 500, status)
@@ -1778,13 +1899,20 @@ func TestRegistrationBioData(t *testing.T) {
 
 	t.Run("error sign jwt token", func(t *testing.T) {
 		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{}, nil).Once()
-		mockRepository.Mock.On("FindOneRegistrationByCredential", &configuration.UserManagement, mock.Anything).Return(&contract.RegistrationModel{ID: 1}, nil).Once()
-		mockRepository.Mock.On("StoreUser", &configuration.UserManagement, DynamicColVal.Column, DynamicColVal.Value).Return(1, nil).Once()
-		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{ID: 1}, nil).Once()
+		mockRepository.Mock.On("FindOneRegistrationByCredential", &configuration.UserManagement, mock.Anything).Return(&contract.RegistrationModel{ID: 1, RegistrationStatus: "verified"}, nil).Once()
+		mockRepository.Mock.On("StoreUser", &configuration.UserManagement, mock.Anything, mock.Anything).Return(1, nil).Once()
+		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{
+			ID:           1,
+			Username:     mock.Anything,
+			Email:        mock.Anything,
+			PhotoProfile: mock.Anything,
+			PhoneNumber:  mock.Anything,
+		}, nil).Once()
 		mockRepository.Mock.On("CreateNewUserDevice", &configuration.UserManagement, mock.Anything, mock.Anything).Return(nil).Once()
-		mockJWT.Mock.On("Sign", mock.Anything).Return("", errors.New("intended error")).Once()
+		mockRepository.Mock.On("StoreFCMToken", &configuration.UserManagement, mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
+		mockJWT.Mock.On("Sign", mock.Anything).Return("", errFoo).Once()
 
-		user, token, status, err := userManagement.RegistrationBioData("08112123244", &DynamicColVal)
+		user, token, status, err := userManagement.CompleteRegistration("guiltfree@gmail.com", &DynamicColVal)
 		assert.Empty(t, user)
 		assert.Empty(t, token)
 		assert.Equal(t, 500, status)
@@ -1792,19 +1920,51 @@ func TestRegistrationBioData(t *testing.T) {
 		t.Log(err.Error())
 	})
 
-	t.Run("success registration bio data", func(t *testing.T) {
+	t.Run("error create complete login session", func(t *testing.T) {
 		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{}, nil).Once()
-		mockRepository.Mock.On("FindOneRegistrationByCredential", &configuration.UserManagement, mock.Anything).Return(&contract.RegistrationModel{ID: 1}, nil).Once()
-		mockRepository.Mock.On("StoreUser", &configuration.UserManagement, DynamicColVal.Column, DynamicColVal.Value).Return(1, nil).Once()
-		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{ID: 1}, nil).Once()
+		mockRepository.Mock.On("FindOneRegistrationByCredential", &configuration.UserManagement, mock.Anything).Return(&contract.RegistrationModel{ID: 1, RegistrationStatus: "verified"}, nil).Once()
+		mockRepository.Mock.On("StoreUser", &configuration.UserManagement, mock.Anything, mock.Anything).Return(1, nil).Once()
+		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{
+			ID:           1,
+			Username:     mock.Anything,
+			Email:        mock.Anything,
+			PhotoProfile: mock.Anything,
+			PhoneNumber:  mock.Anything,
+		}, nil).Once()
 		mockRepository.Mock.On("CreateNewUserDevice", &configuration.UserManagement, mock.Anything, mock.Anything).Return(nil).Once()
-		mockJWT.Mock.On("Sign", mock.Anything).Return("jwt token", nil).Once()
+		mockRepository.Mock.On("StoreFCMToken", &configuration.UserManagement, mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
+		mockJWT.Mock.On("Sign", mock.Anything).Return("generatedtokendong", nil).Once()
+		mockRepository.Mock.On("CreateCompleteLoginSession", &configuration.UserManagement, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(errFoo).Once()
 
-		user, token, status, err := userManagement.RegistrationBioData("08112123244", &DynamicColVal)
+		user, token, status, err := userManagement.CompleteRegistration("guiltfree@gmail.com", &DynamicColVal)
+		assert.Empty(t, user)
+		assert.Empty(t, token)
+		assert.Equal(t, 500, status)
+		assert.NotEmpty(t, err)
+		t.Log(err.Error())
+	})
+
+	t.Run("success operation", func(t *testing.T) {
+		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{}, nil).Once()
+		mockRepository.Mock.On("FindOneRegistrationByCredential", &configuration.UserManagement, mock.Anything).Return(&contract.RegistrationModel{ID: 1, RegistrationStatus: "verified"}, nil).Once()
+		mockRepository.Mock.On("StoreUser", &configuration.UserManagement, mock.Anything, mock.Anything).Return(1, nil).Once()
+		mockRepository.Mock.On("FindOneUser", &configuration.UserManagement, mock.Anything).Return(&contract.UserModel{
+			ID:           1,
+			Username:     mock.Anything,
+			Email:        mock.Anything,
+			PhotoProfile: mock.Anything,
+			PhoneNumber:  mock.Anything,
+		}, nil).Once()
+		mockRepository.Mock.On("CreateNewUserDevice", &configuration.UserManagement, mock.Anything, mock.Anything).Return(nil).Once()
+		mockRepository.Mock.On("StoreFCMToken", &configuration.UserManagement, mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
+		mockJWT.Mock.On("Sign", mock.Anything).Return("generatedtokendong", nil).Once()
+		mockRepository.Mock.On("CreateCompleteLoginSession", &configuration.UserManagement, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
+
+		user, token, status, err := userManagement.CompleteRegistration("guiltfree@gmail.com", &DynamicColVal)
 		assert.NotEmpty(t, user)
 		assert.NotEmpty(t, token)
 		assert.Equal(t, 200, status)
-		assert.Empty(t, err)
+		assert.NoError(t, err)
 	})
 }
 

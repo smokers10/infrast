@@ -4,7 +4,6 @@ type Application struct {
 	Port   string `yaml:"port"`
 	Secret string `yaml:"secret"`
 }
-
 type PostgresConfig struct {
 	Host                  string `yaml:"host"`
 	Port                  int    `yaml:"port"`
@@ -15,7 +14,6 @@ type PostgresConfig struct {
 	MaxIdleConnections    int    `yaml:"max_idle_connections"`
 	ConnectionMaxLifeTime int    `yaml:"connection_max_life_time"`
 }
-
 type MongoDBConfig struct {
 	URI                string `yaml:"uri"`
 	MaxPool            int    `yaml:"max_pool"`
@@ -23,7 +21,6 @@ type MongoDBConfig struct {
 	MaxIdleConnections int    `yaml:"max_idle_connections"`
 	DBName             string `yaml:"db_name"`
 }
-
 type SMTPConfig struct {
 	Host     string `yaml:"host"`
 	Password string `yaml:"password"`
@@ -31,7 +28,6 @@ type SMTPConfig struct {
 	Port     int    `yaml:"port"`
 	Sender   string `yaml:"sender"`
 }
-
 type UserManagementConfig struct {
 	UserCredential     []UserCredential    `yaml:"user_credential"`
 	Login              LoginConfig         `yaml:"login"`
@@ -42,7 +38,6 @@ type UserManagementConfig struct {
 	MessageTemplate    MessageTemplate     `yaml:"message_template"`
 	SelectedCredential UserCredential
 }
-
 type MessageTemplate struct {
 	NewRegistrationEmailTemplatePath  string `yaml:"new_registration_email_template_path"`
 	NewDeviceWarningEmailTemplatePath string `yaml:"new_device_warning_email_template_path"`
@@ -77,7 +72,6 @@ type LoginConfig struct {
 	LoginBlockDuration    int    `yaml:"login_block_duration"`
 	AttemptAtProperty     string `yaml:"attempt_at_property"`
 }
-
 type RegistrationConfig struct {
 	TableName                  string `yaml:"table_name"`
 	IDProperty                 string `yaml:"id_property"`
@@ -88,8 +82,8 @@ type RegistrationConfig struct {
 	DeviceIDProperty           string `yaml:"device_id_property"`
 	UserTypeProperty           string `yaml:"user_type_property"`
 	CreatedAtProperty          string `yaml:"created_at_property"`
+	FCMTokenProperty           string `yaml:"fcm_token_property"`
 }
-
 type UserFCMTokenConfig struct {
 	TableName         string `yaml:"table_name"`
 	IDProperty        string `yaml:"id_property"`
@@ -98,7 +92,6 @@ type UserFCMTokenConfig struct {
 	UserTypeProperty  string `yaml:"user_type_property"`
 	UserIDProperty    string `yaml:"user_id_property"`
 }
-
 type ResetPasswordConfig struct {
 	TableName          string `yaml:"table_name"`
 	IDProperty         string `yaml:"id_property"`
@@ -109,7 +102,6 @@ type ResetPasswordConfig struct {
 	ValidityDuration   int    `yaml:"validity_duration"`
 	UserTypeProperty   string `yaml:"user_type_property"`
 }
-
 type UserDeviceConfig struct {
 	TableName        string `yaml:"table_name"`
 	IDProperty       string `yaml:"id_property"`
@@ -117,24 +109,20 @@ type UserDeviceConfig struct {
 	UserIDProperty   string `yaml:"user_id_property"`
 	UserTypeProperty string `yaml:"user_type_property"`
 }
-
 type Midtrans struct {
 	ServerKey       string   `yaml:"server_key"`
 	IrisKey         string   `yaml:"iris_key"`
 	Environment     string   `yaml:"environment"`
 	EnabledPayments []string `yaml:"enabled_payments"`
 }
-
 type Whatsapp struct {
 	SID       string `yaml:"sid"`
 	AuthToken string `yaml:"auth_token"`
 	Sender    string `yaml:"sender"`
 }
-
 type Firebase struct {
 	ServiceAccountKey string `yaml:"service_account_key"`
 }
-
 type Configuration struct {
 	Application    Application          `yaml:"application"`
 	PostgreSQL     PostgresConfig       `yaml:"postgres"`

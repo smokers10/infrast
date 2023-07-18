@@ -7,11 +7,11 @@ import (
 type UserManagement interface {
 	Login(credential string, password string, device_id string) (user *UserModel, token string, HTTPStatus int, failure error)
 
-	RegisterNewAccount(credential string, device_id string) (token string, HTTPStatus int, failure error)
+	RegisterNewAccount(credential string, device_id string, fcm_token string) (token string, HTTPStatus int, failure error)
 
 	RegisterVerification(token string, otp string) (HTTPStatus int, failure error)
 
-	RegistrationBioData(credential string, query *DynamicColumnValue) (user *UserModel, tokens string, HTTPStatus int, failure error)
+	CompleteRegistration(credential string, query *DynamicColumnValue) (user *UserModel, tokens string, HTTPStatus int, failure error)
 
 	ForgotPassword(credentials string) (tokens string, HTTPStatus int, failure error)
 
@@ -64,8 +64,8 @@ func (m *UserManagementMock) Login(credential string, password string, device_id
 	return args.Get(0).(*UserModel), args.String(1), args.Int(2), args.Error(3)
 }
 
-func (m *UserManagementMock) RegisterNewAccount(credential string, device_id string) (token string, HTTPStatus int, failure error) {
-	args := m.Mock.Called(credential)
+func (m *UserManagementMock) RegisterNewAccount(credential string, device_id string, fcm_token string) (token string, HTTPStatus int, failure error) {
+	args := m.Mock.Called(credential, device_id, fcm_token)
 	return args.String(0), args.Int(1), args.Error(2)
 }
 
@@ -74,7 +74,7 @@ func (m *UserManagementMock) RegisterVerification(token string, otp string) (HTT
 	return args.Int(0), args.Error(1)
 }
 
-func (m *UserManagementMock) RegistrationBioData(credential string, query *DynamicColumnValue) (user *UserModel, tokens string, HTTPStatus int, failure error) {
+func (m *UserManagementMock) CompleteRegistration(credential string, query *DynamicColumnValue) (user *UserModel, tokens string, HTTPStatus int, failure error) {
 	argsMock := m.Mock.Called(credential, query)
 	return argsMock.Get(0).(*UserModel), argsMock.String(1), argsMock.Int(2), argsMock.Error(3)
 }

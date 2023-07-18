@@ -11,8 +11,35 @@ import (
 	"github.com/smokers10/infrast/lib"
 )
 
+const (
+	RegistrationVerificationStatus = "verified"
+)
+
 type userManagementRepositoryImplementation struct {
 	db *sql.DB
+}
+
+func (i *userManagementRepositoryImplementation) CreateCompleteLoginSession(umc *config.UserManagementConfig, token string, credential string, device_id string, login_at int64) error {
+	// INSERT INTO login (token, credential, device_id, login_at) VALUES ($1, $2, $3, $4)
+	conf := umc.Login
+	query := fmt.Sprintf("INSERT INTO %s (%s, %s, %s, %s, %s) VALUES ($1, $2, $3, $4, $5)", pq.QuoteIdentifier(conf.TableName),
+		conf.TypeProperty,
+		conf.TokenProperty,
+		conf.CredentialProperty,
+		conf.DeviceIDProperty,
+		conf.LoginAtProperty)
+	stmt, err := i.db.Prepare(query)
+	if err != nil {
+		return err
+	}
+
+	defer stmt.Close()
+
+	if _, err := stmt.Exec(umc.SelectedCredential.Type, token, credential, device_id, login_at); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (i *userManagementRepositoryImplementation) GetUserCredentials(umc *config.UserManagementConfig, user_id int) (*contract.UserModel, error) {
@@ -180,14 +207,15 @@ func (i *userManagementRepositoryImplementation) UpdateFCMToken(umc *config.User
 	return nil
 }
 
-func (i *userManagementRepositoryImplementation) UpdateRegistration(umc *config.UserManagementConfig, token string, credential string, otp string, device_id string, created_at int64) error {
+func (i *userManagementRepositoryImplementation) UpdateRegistration(umc *config.UserManagementConfig, token string, credential string, otp string, device_id string, fcm_token string, created_at int64) error {
 	registrationConf := umc.Registration
-	// UPDATE registration SET token = $1, credential = $2, otp = $3, device_id = $4, created_at = $5 WHERE credential = $6
-	query := fmt.Sprintf("UPDATE %s SET %s = $1, %s = $2, %s = $3, %s = $4, %s = $5 WHERE %s = $6", pq.QuoteIdentifier(registrationConf.TableName),
+	// UPDATE registration SET token = $1, credential = $2, otp = $3, device_id = $4, fcm_token = $5 created_at = $6 WHERE credential = $7
+	query := fmt.Sprintf("UPDATE %s SET %s = $1, %s = $2, %s = $3, %s = $4, %s = $5, %s = $6 WHERE %s = $7", pq.QuoteIdentifier(registrationConf.TableName),
 		registrationConf.TokenProperty,
 		registrationConf.CredentialProperty,
 		registrationConf.OTPProperty,
 		registrationConf.DeviceIDProperty,
+		registrationConf.FCMTokenProperty,
 		registrationConf.CreatedAtProperty,
 		registrationConf.CredentialProperty)
 
@@ -198,7 +226,7 @@ func (i *userManagementRepositoryImplementation) UpdateRegistration(umc *config.
 
 	defer stmt.Close()
 
-	if _, err := stmt.Exec(token, credential, otp, device_id, created_at, credential); err != nil {
+	if _, err := stmt.Exec(token, credential, otp, device_id, fcm_token, created_at, credential); err != nil {
 		return err
 	}
 
@@ -207,7 +235,10 @@ func (i *userManagementRepositoryImplementation) UpdateRegistration(umc *config.
 
 func (i *userManagementRepositoryImplementation) CompleteLoginSession(umc *config.UserManagementConfig, token string, device_id string, login_at int64) error {
 	// UPDATE <table name> SET token = $1, loged_at = $2 WHERE device_id = %3
-	query := fmt.Sprintf("UPDATE %s SET %s = $1, %s = $2 WHERE %s = $3", pq.QuoteIdentifier(umc.Login.TableName), umc.Login.TokenProperty, umc.Login.LoginAtProperty, umc.Login.DeviceIDProperty)
+	query := fmt.Sprintf("UPDATE %s SET %s = $1, %s = $2 WHERE %s = $3", pq.QuoteIdentifier(umc.Login.TableName),
+		umc.Login.TokenProperty,
+		umc.Login.LoginAtProperty,
+		umc.Login.DeviceIDProperty)
 	stmt, err := i.db.Prepare(query)
 	if err != nil {
 		return err
@@ -256,10 +287,17 @@ func (i *userManagementRepositoryImplementation) CreateNewUserDevice(umc *config
 	return nil
 }
 
-func (i *userManagementRepositoryImplementation) CreateRegistration(umc *config.UserManagementConfig, token string, credential string, otp string, device_id string, created_at int64) error {
-	// insert into -registration- (type, token, credential, otp, device_id, created_at) VALUES ($1..n)
-	query := fmt.Sprintf("INSERT INTO %s (%s, %s, %s, %s, %s, %s) VALUES ($1, $2, $3, $4, $5, $6)", pq.QuoteIdentifier(umc.Registration.TableName), umc.Registration.UserTypeProperty, umc.Registration.TokenProperty,
-		umc.Registration.CredentialProperty, umc.Registration.OTPProperty, umc.Registration.DeviceIDProperty, umc.Registration.CreatedAtProperty)
+func (i *userManagementRepositoryImplementation) CreateRegistration(umc *config.UserManagementConfig, token string, credential string, otp string, device_id string, fcm_token string, created_at int64) error {
+	// insert into registration (type, token, credential, otp, device_id, fcm_token, created_at) VALUES ($1..n)
+	query := fmt.Sprintf("INSERT INTO %s (%s, %s, %s, %s, %s, %s, %s) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+		pq.QuoteIdentifier(umc.Registration.TableName),
+		umc.Registration.UserTypeProperty,
+		umc.Registration.TokenProperty,
+		umc.Registration.CredentialProperty,
+		umc.Registration.OTPProperty,
+		umc.Registration.DeviceIDProperty,
+		umc.Registration.FCMTokenProperty,
+		umc.Registration.CreatedAtProperty)
 	stmt, err := i.db.Prepare(query)
 	if err != nil {
 		return err
@@ -267,7 +305,7 @@ func (i *userManagementRepositoryImplementation) CreateRegistration(umc *config.
 
 	defer stmt.Close()
 
-	if _, err := stmt.Exec(umc.SelectedCredential.Type, token, credential, otp, device_id, created_at); err != nil {
+	if _, err := stmt.Exec(umc.SelectedCredential.Type, token, credential, otp, device_id, fcm_token, created_at); err != nil {
 		return err
 	}
 
@@ -363,11 +401,20 @@ func (i *userManagementRepositoryImplementation) FindOneRegistration(umc *config
 	result := contract.RegistrationModel{}
 	var registrationStatusNullable sql.NullString
 
-	// SELECT id, token, otp, credential, created_at, type, registration_status, device_id FROM regigstration WHERE token = $1 AND user_Type $2
-	query := fmt.Sprintf("SELECT %s as id, %s as token, %s as otp, %s as credential, %s as created_at, %s as type, %s as registration_status, %s as device_id FROM %s WHERE %s = $1 AND %s = $2 LIMIT 1",
-		umc.Registration.IDProperty, umc.Registration.TokenProperty, umc.Registration.OTPProperty, umc.Registration.CredentialProperty, umc.Registration.CreatedAtProperty,
-		umc.Registration.UserTypeProperty, umc.Registration.RegistrationStatusProperty, umc.Registration.DeviceIDProperty,
-		pq.QuoteIdentifier(umc.Registration.TableName), umc.Registration.TokenProperty, umc.Registration.UserTypeProperty)
+	// SELECT id, token, otp, credential, created_at, type, registration_status, device_id, fcm_token FROM regigstration WHERE token = $1 AND user_Type $2
+	query := fmt.Sprintf("SELECT %s as id, %s as token, %s as otp, %s as credential, %s as created_at, %s as type, %s as registration_status, %s as device_id, %s as fcm_token FROM %s WHERE %s = $1 AND %s = $2 LIMIT 1",
+		umc.Registration.IDProperty,
+		umc.Registration.TokenProperty,
+		umc.Registration.OTPProperty,
+		umc.Registration.CredentialProperty,
+		umc.Registration.CreatedAtProperty,
+		umc.Registration.UserTypeProperty,
+		umc.Registration.RegistrationStatusProperty,
+		umc.Registration.DeviceIDProperty,
+		umc.Registration.FCMTokenProperty,
+		pq.QuoteIdentifier(umc.Registration.TableName),
+		umc.Registration.TokenProperty,
+		umc.Registration.UserTypeProperty)
 	stmt, err := i.db.Prepare(query)
 	if err != nil {
 		return &result, err
@@ -375,7 +422,7 @@ func (i *userManagementRepositoryImplementation) FindOneRegistration(umc *config
 
 	defer stmt.Close()
 
-	if err := stmt.QueryRow(token, umc.SelectedCredential.Type).Scan(&result.ID, &result.Token, &result.OTP, &result.Credential, &result.CreatedAt, &result.Type, &registrationStatusNullable, &result.DeviceID); err != nil {
+	if err := stmt.QueryRow(token, umc.SelectedCredential.Type).Scan(&result.ID, &result.Token, &result.OTP, &result.Credential, &result.CreatedAt, &result.Type, &registrationStatusNullable, &result.DeviceID, &result.FCMToken); err != nil {
 		if err == sql.ErrNoRows {
 			return &result, nil
 		}
@@ -557,7 +604,7 @@ func (i *userManagementRepositoryImplementation) UpdateStatusRegistration(umc *c
 
 	defer stmt.Close()
 
-	if _, err := stmt.Exec("verified", token); err != nil {
+	if _, err := stmt.Exec(RegistrationVerificationStatus, token); err != nil {
 		return err
 	}
 

@@ -81,7 +81,7 @@ As you can see the firebase configuration required firebase service account key,
 1. Go to your firebase console then go to `project setting`.
 2. Select `service account` tab.
 3. On `firebase admin SDK` click `Generate new private key` button, it will show you modal pop up click `Generate Key` you will download a JSON file from firebase console.
-4. After you downloaded the JSON, open the file and then encode all information inside using base64, you use [this](https://www.base64decode.org/) site to encode your private key.
+4. After you downloaded the JSON, open the file and then encode all information inside using base64, you can use [this](https://www.base64decode.org/) site to encode your private key.
 5. encrypt your encoded private key using [enigma](https://github.com/smokers10/enigma).
 6. Set encrypted private key to your configuration YAML.
 
@@ -203,8 +203,9 @@ as you can see from yaml above you should have following table on your system <b
 3. Registration Table
 4. User Device Table
 5. Reset Password Table
+6. User FCM Token Table
 
-note : on each table you also need to define required property.
+note : on each table you need to define required property infrast will detect your table structure to check if you define required table property.
 ## Step 2 : Call User Management Or Middleware
 ```
 package main

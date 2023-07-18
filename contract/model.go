@@ -27,6 +27,7 @@ type RegistrationModel struct {
 	Type               string
 	RegistrationStatus string
 	DeviceID           string
+	FCMToken           string
 }
 
 type LoginModel struct {

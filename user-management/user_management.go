@@ -11,6 +11,10 @@ import (
 	"github.com/smokers10/infrast/lib"
 )
 
+const (
+	RegistrationVerificationStatus = "verified"
+)
+
 type userManagementImplementation struct {
 	UserManagementConfig *config.UserManagementConfig
 	GeneralConfig        *config.Configuration
@@ -197,7 +201,7 @@ func (i *userManagementImplementation) Logout(device_id string) (httpStatus int,
 	}
 
 	if err := i.Repository.DeleteLoginSession(i.UserManagementConfig, device_id); err != nil {
-		return 500, fmt.Errorf("error delete login session : %v", err.Error())
+		return http.StatusInternalServerError, fmt.Errorf("error delete login session : %v", err.Error())
 	}
 
 	return 200, nil
@@ -259,8 +263,8 @@ func (i *userManagementImplementation) ForgotPassword(credentials string) (token
 
 	if credentialType == "email" {
 		data := map[string]interface{}{
-			"reciever": user.Username,
-			"otp":      otp,
+			"issuer_name": user.Username,
+			"otp":         otp,
 		}
 
 		template, err := i.TemplateProcessor.EmailTemplate(data, i.UserManagementConfig.MessageTemplate.ForgotPasswordEmailTemplatePath)
@@ -416,19 +420,24 @@ func (i *userManagementImplementation) Login(credential string, password string,
 	// remove user password for security measurement
 	user.Password = ""
 
+	// complete login session
+	if err := i.Repository.CompleteLoginSession(i.UserManagementConfig, jwtToken, device_id, time.Now().UTC().Unix()); err != nil {
+		return nil, "", 500, fmt.Errorf("error complete login session : %v", err.Error())
+	}
+
 	return user, jwtToken, 200, nil
 }
 
-func (i *userManagementImplementation) RegisterNewAccount(credential string, device_id string) (token string, HTTPStatus int, failure error) {
-	if credential == "" || device_id == "" {
-		return "", http.StatusBadRequest, fmt.Errorf("incomplete required data\ncredential : %v\ndevice id : %v", credential, device_id)
+func (i *userManagementImplementation) RegisterNewAccount(credential string, device_id string, fcm_token string) (token string, HTTPStatus int, failure error) {
+	if credential == "" || device_id == "" || fcm_token == "" {
+		return "", http.StatusBadRequest, fmt.Errorf("incomplete required data\ncredential : %v\ndevice id : %v\nfcm token: %v", credential, device_id, fcm_token)
 	}
 
 	credentialType := lib.CredentialChecker(credential)
 
 	if credentialType == "email" {
 		if lib.EmailChecker(credential) {
-			regToken, otp, status, err := i.registrationLogic(credential, device_id)
+			regToken, otp, status, err := i.registrationLogic(credential, device_id, fcm_token)
 			if err != nil {
 				return "", status, err
 			}
@@ -448,7 +457,7 @@ func (i *userManagementImplementation) RegisterNewAccount(credential string, dev
 		}
 
 		if isPhone {
-			regToken, otp, status, err := i.registrationLogic(credential, device_id)
+			regToken, otp, status, err := i.registrationLogic(credential, device_id, fcm_token)
 			if err != nil {
 				return "", status, err
 			}
@@ -481,7 +490,7 @@ func (i *userManagementImplementation) RegisterVerification(token string, otp st
 	}
 
 	// if registration verficiation status is verified
-	if reg.RegistrationStatus == "verified" {
+	if reg.RegistrationStatus == RegistrationVerificationStatus {
 		return 401, errors.New("your registration already verified")
 	}
 
@@ -498,9 +507,24 @@ func (i *userManagementImplementation) RegisterVerification(token string, otp st
 	return 200, nil
 }
 
-func (i *userManagementImplementation) RegistrationBioData(credential string, query *contract.DynamicColumnValue) (user *contract.UserModel, tokens string, HTTPStatus int, failure error) {
+func (i *userManagementImplementation) CompleteRegistration(credential string, query *contract.DynamicColumnValue) (user *contract.UserModel, tokens string, HTTPStatus int, failure error) {
 	if credential == "" || query == nil {
 		return nil, "", http.StatusBadRequest, fmt.Errorf("incomplete required data\ncredential : %v\nquery : %v", credential, query)
+	}
+
+	credentialType := lib.CredentialChecker(credential)
+
+	if credentialType == "email" {
+		if !lib.EmailChecker(credential) {
+			return nil, "", http.StatusBadRequest, fmt.Errorf("%s is not valid email", credential)
+		}
+	}
+
+	if credentialType == "phone" {
+		_, err := lib.PhoneChecker(credential)
+		if err != nil {
+			return nil, "", http.StatusBadRequest, fmt.Errorf("%s is not valid phone number", credential)
+		}
 	}
 
 	// check if user exists or not
@@ -521,6 +545,10 @@ func (i *userManagementImplementation) RegistrationBioData(credential string, qu
 
 	if *reg == (contract.RegistrationModel{}) {
 		return nil, "", 404, fmt.Errorf("registration with credential %v not found", credential)
+	}
+
+	if reg.RegistrationStatus != RegistrationVerificationStatus {
+		return nil, "", 400, fmt.Errorf("registration with credential %v not verified to complete", credential)
 	}
 
 	// insert user
@@ -545,18 +573,21 @@ func (i *userManagementImplementation) RegistrationBioData(credential string, qu
 		return nil, "", 500, fmt.Errorf("error store user device : %v", err.Error())
 	}
 
-	// make token
-	payload := map[string]interface{}{
-		"user_id": user.ID,
-		"type":    i.UserManagementConfig.SelectedCredential.Type,
-		"iat":     time.Now().UTC().Unix(),
-		"eat":     time.Now().UTC().AddDate(0, 0, 7).Unix(),
+	// store fcm token
+	timestamp := time.Now().UTC().Local().Unix()
+	if err := i.Repository.StoreFCMToken(i.UserManagementConfig, reg.FCMToken, timestamp, insertedUser.ID); err != nil {
+		return nil, "", 500, fmt.Errorf("error store fcm token : %v", err.Error())
 	}
 
 	// sign jwt token
-	jwtToken, err := i.JWT.Sign(payload)
+	jwtToken, err := i.JWT.Sign(lib.MakeJWTPayload(insertedUser.ID, *i.UserManagementConfig))
 	if err != nil {
 		return nil, "", 500, fmt.Errorf("token signing failure : %v", err.Error())
+	}
+
+	// create complete login session
+	if err := i.Repository.CreateCompleteLoginSession(i.UserManagementConfig, jwtToken, credential, reg.DeviceID, time.Now().UTC().Unix()); err != nil {
+		return nil, "", 500, fmt.Errorf("error create complete login session : %v", err.Error())
 	}
 
 	// remove user password for security measurement
@@ -615,7 +646,7 @@ func (i *userManagementImplementation) ResetPassword(token string, otp string, n
 	return 200, nil
 }
 
-func (i *userManagementImplementation) registrationLogic(credential string, device_id string) (token string, otp string, HTTPStatus int, failure error) {
+func (i *userManagementImplementation) registrationLogic(credential string, device_id string, fcm_token string) (token string, otp string, HTTPStatus int, failure error) {
 	// check is already user exists or not
 	user, err := i.Repository.FindOneUser(i.UserManagementConfig, credential)
 	if err != nil {
@@ -649,11 +680,11 @@ func (i *userManagementImplementation) registrationLogic(credential string, devi
 
 	// if registration data is found then update if not create new one
 	if *registration != (contract.RegistrationModel{}) {
-		if err := i.Repository.UpdateRegistration(i.UserManagementConfig, regToken, credential, secureOTP, device_id, time.Now().Unix()); err != nil {
+		if err := i.Repository.UpdateRegistration(i.UserManagementConfig, regToken, credential, secureOTP, device_id, fcm_token, time.Now().Unix()); err != nil {
 			return "", "", 500, fmt.Errorf("error update registration : %v", err.Error())
 		}
 	} else {
-		if err := i.Repository.CreateRegistration(i.UserManagementConfig, regToken, credential, secureOTP, device_id, time.Now().Unix()); err != nil {
+		if err := i.Repository.CreateRegistration(i.UserManagementConfig, regToken, credential, secureOTP, device_id, fcm_token, time.Now().Unix()); err != nil {
 			return "", "", 500, err
 		}
 	}

@@ -15,7 +15,7 @@ func TestLoginStructureChecker(t *testing.T) {
 	assert.NoError(t, err)
 	checker := TableStructureChecker(&mockRepository)
 
-	t.Run("match", func(t *testing.T) {
+	t.Run("mismatch", func(t *testing.T) {
 		columnsMatch := []contract.Column{
 			{
 				Field: "mismatch",
@@ -66,7 +66,7 @@ func TestRegistrationStructureChecker(t *testing.T) {
 	assert.NoError(t, err)
 	checker := TableStructureChecker(&mockRepository)
 
-	t.Run("match", func(t *testing.T) {
+	t.Run("mismatch", func(t *testing.T) {
 		columnsMatch := []contract.Column{
 			{
 				Field: "mismatch",
@@ -104,7 +104,7 @@ func TestResetPasswordStructureChecker(t *testing.T) {
 	assert.NoError(t, err)
 	checker := TableStructureChecker(&mockRepository)
 
-	t.Run("match", func(t *testing.T) {
+	t.Run("mismatch", func(t *testing.T) {
 		columnsMatch := []contract.Column{
 			{
 				Field: "mismatch",
@@ -140,7 +140,7 @@ func TestUserCredentialStructureChecker(t *testing.T) {
 	assert.NoError(t, err)
 	checker := TableStructureChecker(&mockRepository)
 
-	t.Run("match", func(t *testing.T) {
+	t.Run("mismatch", func(t *testing.T) {
 		columnsMatch := []contract.Column{
 			{
 				Field: "mismatch",
@@ -176,7 +176,7 @@ func TestUserFCMTokenStructureChecker(t *testing.T) {
 	assert.NoError(t, err)
 	checker := TableStructureChecker(&mockRepository)
 
-	t.Run("match", func(t *testing.T) {
+	t.Run("mismatch", func(t *testing.T) {
 		columnsMatch := []contract.Column{
 			{
 				Field: "mismatch",
@@ -210,7 +210,7 @@ func TestUserDeviceChecker(t *testing.T) {
 	assert.NoError(t, err)
 	checker := TableStructureChecker(&mockRepository)
 
-	t.Run("match", func(t *testing.T) {
+	t.Run("mismatch", func(t *testing.T) {
 		columnsMatch := []contract.Column{
 			{
 				Field: "mismatch",

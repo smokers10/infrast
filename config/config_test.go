@@ -124,6 +124,7 @@ func TestReader(t *testing.T) {
 			assert.NotEmpty(t, c.Registration.UserTypeProperty)
 			assert.NotEmpty(t, c.Registration.IDProperty)
 			assert.NotEmpty(t, c.Registration.CreatedAtProperty)
+			assert.NotEmpty(t, c.Registration.FCMTokenProperty)
 		})
 
 		t.Run("Reset Password Check", func(t *testing.T) {

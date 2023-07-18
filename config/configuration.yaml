@@ -96,6 +96,7 @@ user_management :
     device_id_property : device_id
     created_at_property : created_at
     user_type_property : user_type
+    fcm_token_property : fcm_token
   reset_password : 
     table_name : reset_password
     id_property : id
@@ -106,12 +107,12 @@ user_management :
     validity_duration : 900000
     user_type_property : user_type
   user_fcm_token :
-    table_name : "user_fcm"
-    id_property : "id"
-    token_property : "token"
-    timestamp_property : "timestamp"
-    user_type_property : "user_type"
-    user_id_property : "user_id"
+    table_name : user_fcm
+    id_property : id
+    token_property : token
+    timestamp_property : timestamp
+    user_type_property : user_type
+    user_id_property : user_id
 
 
     

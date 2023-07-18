@@ -12,13 +12,13 @@ type UserManagementRepository interface {
 
 	FindOneUserByID(umc *config.UserManagementConfig, user_id int) (*UserModel, error)
 
-	CreateRegistration(umc *config.UserManagementConfig, token string, credential string, otp string, device_id string, created_at int64) error
+	CreateRegistration(umc *config.UserManagementConfig, token string, credential string, otp string, device_id string, fcm_token string, created_at int64) error
 
 	FindOneRegistration(umc *config.UserManagementConfig, token string) (*RegistrationModel, error)
 
 	FindOneRegistrationByCredential(umc *config.UserManagementConfig, credential string) (*RegistrationModel, error)
 
-	UpdateRegistration(umc *config.UserManagementConfig, token string, credential string, otp string, device_id string, created_at int64) error
+	UpdateRegistration(umc *config.UserManagementConfig, token string, credential string, otp string, device_id string, fcm_token string, created_at int64) error
 
 	UpdateStatusRegistration(umc *config.UserManagementConfig, token string) error
 
@@ -32,17 +32,19 @@ type UserManagementRepository interface {
 
 	DeleteForgotPassword(umc *config.UserManagementConfig, token string) error
 
-	CreateNewLoginSession(umc *config.UserManagementConfig, credential string, device_id string) error
-
-	FindOneLoginSession(umc *config.UserManagementConfig, device_id string) (*LoginModel, error)
-
 	UpdateLoginFailedAttempt(umc *config.UserManagementConfig, device_id string, new_number int) error
 
 	UpdateLoginCredential(umc *config.UserManagementConfig, device_id string, credential string) error
 
+	CreateNewLoginSession(umc *config.UserManagementConfig, credential string, device_id string) error
+
+	FindOneLoginSession(umc *config.UserManagementConfig, device_id string) (*LoginModel, error)
+
 	CompleteLoginSession(umc *config.UserManagementConfig, token string, device_id string, login_at int64) error
 
 	DeleteLoginSession(umc *config.UserManagementConfig, device_id string) error
+
+	CreateCompleteLoginSession(umc *config.UserManagementConfig, token string, credential string, device_id string, login_at int64) error
 
 	CreateNewUserDevice(umc *config.UserManagementConfig, user_id int, device_id string) error
 
@@ -63,6 +65,11 @@ type UserManagementRepository interface {
 
 type UserManagementRepositoryMock struct {
 	Mock mock.Mock
+}
+
+func (m *UserManagementRepositoryMock) CreateCompleteLoginSession(umc *config.UserManagementConfig, token string, credential string, device_id string, login_at int64) error {
+	args := m.Mock.Called(umc, token, credential, device_id, login_at)
+	return args.Error(0)
 }
 
 func (m *UserManagementRepositoryMock) GetUserCredentials(umc *config.UserManagementConfig, user_id int) (*UserModel, error) {
@@ -105,8 +112,8 @@ func (m *UserManagementRepositoryMock) UpdateJWTToken(umc *config.UserManagement
 	return args.Error(0)
 }
 
-func (m *UserManagementRepositoryMock) UpdateRegistration(user_management_conf *config.UserManagementConfig, token string, credential string, otp string, device_id string, created_at int64) error {
-	args := m.Mock.Called(user_management_conf, token, credential, otp, device_id, created_at)
+func (m *UserManagementRepositoryMock) UpdateRegistration(user_management_conf *config.UserManagementConfig, token string, credential string, otp string, device_id string, fcm_token string, created_at int64) error {
+	args := m.Mock.Called(user_management_conf, token, credential, otp, device_id, fcm_token, created_at)
 	return args.Error(0)
 }
 
@@ -115,8 +122,8 @@ func (m *UserManagementRepositoryMock) FindOneUser(user_management_conf *config.
 	return args.Get(0).(*UserModel), args.Error(1)
 }
 
-func (m *UserManagementRepositoryMock) CreateRegistration(user_management_conf *config.UserManagementConfig, token string, credential string, otp string, device_id string, created_at int64) error {
-	args := m.Mock.Called(user_management_conf, token, credential, otp, device_id, created_at)
+func (m *UserManagementRepositoryMock) CreateRegistration(user_management_conf *config.UserManagementConfig, token string, credential string, otp string, device_id string, fcm_token string, created_at int64) error {
+	args := m.Mock.Called(user_management_conf, token, credential, otp, device_id, fcm_token, created_at)
 	return args.Error(0)
 }
 
