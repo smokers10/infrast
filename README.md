@@ -233,6 +233,55 @@ func main() {
 	app.Listen(configuration.Application.Port)
 }
 ```
+## Message Template Explanation
+As you can see infrast configuration on user management there is a `message_template`, this configuration is used to make infrast detect email and WA message template on you sistem
+so infrast can send notification to user when some condition occured such us registration verification, forgot password and new device login notification. Here de detailed explanation on each configuration : 
+<table>
+  <tr>
+    <th>Configuration Name</th>
+    <th>Description</th>
+    <th>Required Data On Template</th>
+  </tr>
+  <tr>
+    <td>new_registration_email_template_path</td>
+    <td>email HTML template file path that used when verificating new user registratio</td>
+    <td>
+      {{.otp}}
+    </td>
+  </tr>
+  <tr>
+    <td>new_device_warning_email_template_path</td>
+    <td>email HTML template file path that use when user login with unregistered device</td>
+    <td>
+      {{.logout_url}} <br>
+      {{.logged_at}}
+    </td>
+  </tr>
+  <tr>
+    <td>forgot_password_email_template_path</td>
+    <td>email HTML template file path that used when user forgot their password</td>
+    <td>
+      {{.issuer_name}} <br>
+      {{.otp}}
+    </td>
+  </tr>
+  <tr>
+    <td>new_registration_message_template</td>
+    <td>message template to sent when user verificating new user registration via WA</td>
+    <td>single %v to concenate otp</td>
+  </tr>
+  <tr>
+    <td>new_device_warning_message_template</td>
+    <td>message template to sent when user login unregistered device</td>
+    <td>single %v to concenate logout URL</td>
+  </tr>
+    <tr>
+    <td>forgot_password_message_template</td>
+    <td>message tamplate to sent when user forgot their password and prefered to send reset code via WA </td>
+    <td>single %v to concenate reset password code</td>
+  </tr>
+</table>
+
 # Contributing
 
 Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.

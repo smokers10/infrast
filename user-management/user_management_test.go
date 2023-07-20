@@ -75,6 +75,49 @@ var (
 	}
 )
 
+func TestLogoutWithDeleteDeviceID(t *testing.T) {
+	umc := &configuration.UserManagement
+	userManagement, err := UserManagement(&configuration, &mockRepository, &mockIdentifier, &mockEncryption, &mockJWT, &mockMailer, &mockWhatsapp, &mockTemplateProcessor, "Admin")
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+
+	t.Run("incomplete required data", func(t *testing.T) {
+		status, err := userManagement.LogoutWithDeleteDeviceID("", 1)
+		assert.Equal(t, 400, status)
+		assert.NotEmpty(t, err)
+		t.Log(err.Error())
+	})
+
+	t.Run("incomplete required data", func(t *testing.T) {
+		mockRepository.Mock.On("DeleteLoginSession", umc, mock.Anything).Return(errFoo).Once()
+
+		status, err := userManagement.LogoutWithDeleteDeviceID("device-id", 1)
+		assert.Equal(t, 500, status)
+		assert.NotEmpty(t, err)
+		t.Log(err.Error())
+	})
+
+	t.Run("incomplete required data", func(t *testing.T) {
+		mockRepository.Mock.On("DeleteLoginSession", umc, mock.Anything).Return(nil).Once()
+		mockRepository.Mock.On("DeleteUserDevice", umc, mock.Anything, mock.Anything).Return(errFoo).Once()
+
+		status, err := userManagement.LogoutWithDeleteDeviceID("device-id", 1)
+		assert.Equal(t, 500, status)
+		assert.NotEmpty(t, err)
+		t.Log(err.Error())
+	})
+
+	t.Run("success operation", func(t *testing.T) {
+		mockRepository.Mock.On("DeleteLoginSession", umc, mock.Anything).Return(nil).Once()
+		mockRepository.Mock.On("DeleteUserDevice", umc, mock.Anything, mock.Anything).Return(nil).Once()
+
+		status, err := userManagement.LogoutWithDeleteDeviceID("device-id", 1)
+		assert.Equal(t, 200, status)
+		assert.Empty(t, err)
+	})
+}
+
 func TestUpsertUserFCMToken(t *testing.T) {
 	userManagement, err := UserManagement(&configuration, &mockRepository, &mockIdentifier, &mockEncryption, &mockJWT, &mockMailer, &mockWhatsapp, &mockTemplateProcessor, "Admin")
 	if err != nil {

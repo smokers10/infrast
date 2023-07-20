@@ -19,6 +19,26 @@ type userManagementRepositoryImplementation struct {
 	db *sql.DB
 }
 
+func (i *userManagementRepositoryImplementation) DeleteUserDevice(umc *config.UserManagementConfig, user_id int, device_id string) error {
+	// DELETE FROM user_device WHERE user_id = $1 AND device_id $2
+	conf := umc.UserDevice
+	query := fmt.Sprintf("DELETE FROM %s WHERE %s = $1 AND %s = $2", pq.QuoteIdentifier(conf.TableName),
+		conf.UserIDProperty,
+		conf.DeviceIDProperty)
+	stmt, err := i.db.Prepare(query)
+	if err != nil {
+		return err
+	}
+
+	defer stmt.Close()
+
+	if _, err := stmt.Exec(user_id, device_id); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (i *userManagementRepositoryImplementation) CreateCompleteLoginSession(umc *config.UserManagementConfig, token string, credential string, device_id string, login_at int64) error {
 	// INSERT INTO login (token, credential, device_id, login_at) VALUES ($1, $2, $3, $4)
 	conf := umc.Login

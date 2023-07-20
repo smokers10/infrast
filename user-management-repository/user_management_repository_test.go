@@ -79,6 +79,44 @@ var (
 	}
 )
 
+func TestDeleteUserDevice(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	assert.NoError(t, err)
+	repository := UserManagementRepository(db)
+	conf := configuration.UserManagement.UserDevice
+	query := fmt.Sprintf("DELETE FROM %s WHERE %s = \\$1 AND %s = \\$2", pq.QuoteIdentifier(conf.TableName),
+		conf.UserIDProperty,
+		conf.DeviceIDProperty)
+	t.Logf("query to test : %s", query)
+	userID := 1
+	deviceID := "device-id"
+
+	t.Run("error on prepare", func(t *testing.T) {
+		mock.ExpectPrepare(query).WillReturnError(fmt.Errorf("error on prepare"))
+
+		err := repository.DeleteUserDevice(&configuration.UserManagement, userID, deviceID)
+		assert.Error(t, err)
+		t.Logf("error : %v", err.Error())
+	})
+
+	t.Run("error on exec", func(t *testing.T) {
+		stmt := mock.ExpectPrepare(query)
+		stmt.ExpectExec().WithArgs(userID, deviceID).WillReturnError(fmt.Errorf("error on exec"))
+
+		err := repository.DeleteUserDevice(&configuration.UserManagement, userID, deviceID)
+		assert.Error(t, err)
+		t.Logf("error : %v", err.Error())
+	})
+
+	t.Run("success operation", func(t *testing.T) {
+		stmt := mock.ExpectPrepare(query)
+		stmt.ExpectExec().WithArgs(userID, deviceID).WillReturnResult(sqlmock.NewResult(1, 1))
+
+		err := repository.DeleteUserDevice(&configuration.UserManagement, userID, deviceID)
+		assert.NoError(t, err)
+	})
+}
+
 func TestCreateCompleteLoginSession(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)

@@ -19,6 +19,8 @@ type UserManagement interface {
 
 	Logout(device_id string) (httpStatus int, failure error)
 
+	LogoutWithDeleteDeviceID(device_id string, user_id int) (httpStatus int, failure error)
+
 	UpdateUserCredential(new_credential string, current_password string, user_id int, credential_property string) (HTTPStatus int, failure error)
 
 	UpdateUserPassword(new_password string, confirmation_password string, user_id int) (HTTPStatus int, failure error)
@@ -32,6 +34,11 @@ type UserManagement interface {
 
 type UserManagementMock struct {
 	Mock mock.Mock
+}
+
+func (m *UserManagementMock) LogoutWithDeleteDeviceID(device_id string, user_id int) (httpStatus int, failure error) {
+	args := m.Mock.Called(device_id, user_id)
+	return args.Int(0), args.Error(1)
 }
 
 func (m *UserManagementMock) UpdateUserCredential(new_credential string, current_password string, credential_property string) (HTTPStatus int, failure error) {

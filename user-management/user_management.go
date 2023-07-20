@@ -207,6 +207,22 @@ func (i *userManagementImplementation) Logout(device_id string) (httpStatus int,
 	return 200, nil
 }
 
+func (i *userManagementImplementation) LogoutWithDeleteDeviceID(device_id string, user_id int) (httpStatus int, failure error) {
+	if device_id == "" || user_id == 0 {
+		return 400, fmt.Errorf("incomplete required data\ndevice id : %s\nuser id : %d", device_id, user_id)
+	}
+
+	if err := i.Repository.DeleteLoginSession(i.UserManagementConfig, device_id); err != nil {
+		return http.StatusInternalServerError, fmt.Errorf("error delete login session : %s", err.Error())
+	}
+
+	if err := i.Repository.DeleteUserDevice(i.UserManagementConfig, user_id, device_id); err != nil {
+		return http.StatusInternalServerError, fmt.Errorf("error delete user device : %s", err.Error())
+	}
+
+	return http.StatusOK, nil
+}
+
 func (i *userManagementImplementation) ForgotPassword(credentials string) (tokens string, HTTPStatus int, failure error) {
 	if credentials == "" {
 		return "", http.StatusBadRequest, fmt.Errorf("credential is empty")

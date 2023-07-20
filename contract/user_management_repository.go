@@ -50,6 +50,8 @@ type UserManagementRepository interface {
 
 	FindUserDevice(umc *config.UserManagementConfig, user_id int, device_id string) (*UserDeviceModel, error)
 
+	DeleteUserDevice(umc *config.UserManagementConfig, user_id int, device_id string) error
+
 	UpdateCredential(umc *config.UserManagementConfig, new_credential string, user_id int, credential_property string) error
 
 	UpdateUserPasswordByUserID(umc *config.UserManagementConfig, new_password string, user_id int) error
@@ -65,6 +67,11 @@ type UserManagementRepository interface {
 
 type UserManagementRepositoryMock struct {
 	Mock mock.Mock
+}
+
+func (m *UserManagementRepositoryMock) DeleteUserDevice(umc *config.UserManagementConfig, user_id int, device_id string) error {
+	args := m.Mock.Called(umc, user_id, device_id)
+	return args.Error(0)
 }
 
 func (m *UserManagementRepositoryMock) CreateCompleteLoginSession(umc *config.UserManagementConfig, token string, credential string, device_id string, login_at int64) error {
