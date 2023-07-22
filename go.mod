@@ -17,6 +17,7 @@ require (
 require (
 	firebase.google.com/go v3.13.0+incompatible
 	github.com/midtrans/midtrans-go v1.3.6
+	github.com/twilio/twilio-go v1.9.0
 	google.golang.org/api v0.130.0
 )
 
@@ -35,7 +36,6 @@ require (
 	github.com/googleapis/enterprise-certificate-proxy v0.2.5 // indirect
 	github.com/googleapis/gax-go/v2 v2.11.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/twilio/twilio-go v1.9.0 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	golang.org/x/net v0.12.0 // indirect
 	golang.org/x/oauth2 v0.10.0 // indirect
@@ -75,6 +75,7 @@ require (
 	github.com/klauspost/compress v1.16.3 // indirect
 	github.com/montanaflynn/stats v0.0.0-20171201202039-1bf9dbcd8cbe // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/objx v0.5.0 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
 	github.com/xdg-go/scram v1.1.2 // indirect

@@ -329,6 +329,11 @@ func userFCMCheck(columns []contract.Column, userFCMConfig *config.UserFCMTokenC
 		listMismatch = append(listMismatch, UserTypeProperty)
 	}
 
+	// check UserIDProperty
+	if UserIDProperty := isMatch(columns, userFCMConfig.UserIDProperty); UserIDProperty != "" {
+		listMismatch = append(listMismatch, UserIDProperty)
+	}
+
 	return listMismatch
 }
 

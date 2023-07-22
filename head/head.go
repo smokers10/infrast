@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/common-nighthawk/go-figure"
+	"github.com/sirupsen/logrus"
 	"github.com/smokers10/infrast/config"
 	"github.com/smokers10/infrast/contract"
 	"github.com/smokers10/infrast/database"
@@ -47,6 +48,7 @@ func Head(path string, encryption_key string) (*module, error) {
 		return nil, err
 	}
 	c := ch.Configuration
+	logrus.Info("configuration loaded")
 
 	// get confidential information
 	key := []byte(encryption_key)
@@ -127,21 +129,6 @@ func Head(path string, encryption_key string) (*module, error) {
 		return nil, fmt.Errorf("error call postgre db : %v", err.Error())
 	}
 
-	midtrans, err := midtrans.Midtrans(c)
-	if err != nil {
-		return nil, fmt.Errorf("error midtrans : %v", err.Error())
-	}
-
-	whatsapp, err := whatsapp.Whatsapp(c)
-	if err != nil {
-		return nil, fmt.Errorf("error whatsapp : %v", err.Error())
-	}
-
-	firebase, err := firebase.Firebase(c)
-	if err != nil {
-		return nil, fmt.Errorf("error whatsapp : %v", err.Error())
-	}
-
 	modules := module{
 		DB:                       database,
 		Encryption:               encryption,
@@ -150,11 +137,43 @@ func Head(path string, encryption_key string) (*module, error) {
 		Mailer:                   mailer.Mailer(c),
 		TemplateProcessor:        templateprocessor.TemplateProccessor(),
 		UserManagementRepository: usermanagementrepository.UserManagementRepository(sql),
-		Midtrans:                 midtrans,
-		Whatsapp:                 whatsapp,
-		Firebase:                 firebase,
 		Configuration:            c,
 	}
+
+	if c.Midtrans.ServerKey != "" || c.Midtrans.IrisKey != "" {
+		midtrans, err := midtrans.Midtrans(c)
+		if err != nil {
+			return nil, fmt.Errorf("error midtrans : %v", err.Error())
+		}
+
+		modules.Midtrans = midtrans
+	} else {
+		logrus.Warning("Midtrans Disabled")
+	}
+
+	if c.Whatsapp.AuthToken != "" && c.Whatsapp.SID != "" {
+		whatsapp, err := whatsapp.Whatsapp(c)
+		if err != nil {
+			return nil, fmt.Errorf("error whatsapp : %v", err.Error())
+		}
+
+		modules.Whatsapp = whatsapp
+	} else {
+		logrus.Warning("Whatsapp Disabled")
+	}
+
+	if c.Firebase.ServiceAccountKey != "" {
+		firebase, err := firebase.Firebase(c)
+		if err != nil {
+			return nil, fmt.Errorf("error firebase : %v", err.Error())
+		}
+
+		modules.Firebase = firebase
+	} else {
+		logrus.Warning("Firebase Disabled")
+	}
+
+	logrus.Info("modules all set")
 
 	// User management table structur check
 	checkerRepo := tablestructurechecker.TableStructureCheckerRepository(sql)
@@ -167,7 +186,11 @@ func Head(path string, encryption_key string) (*module, error) {
 	if len(checkResult) != 0 {
 		lib.CheckResultLogFormat(checkResult)
 		return nil, errors.New("user management TSC error")
+	} else {
+		logrus.Info("user management ready!")
 	}
+
+	logrus.Info("Infrast OK!")
 
 	return &modules, nil
 }

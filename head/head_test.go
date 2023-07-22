@@ -24,13 +24,13 @@ func TestHead(t *testing.T) {
 	t.Logf("firebase service account key : %s", decodedKey)
 
 	t.Run("check user management", func(t *testing.T) {
-		UM, err := head.UserManagement("admin")
+		UM, err := head.UserManagement("user")
 		assert.NoError(t, err)
 		assert.NotNil(t, UM)
 	})
 
 	t.Run("check middleware", func(t *testing.T) {
-		middleware, err := head.Middleware("admin")
+		middleware, err := head.Middleware("user")
 		assert.NoError(t, err)
 		assert.NotNil(t, middleware)
 	})

@@ -15,6 +15,6 @@ func TestMailer(t *testing.T) {
 
 	smtp := Mailer(c.Configuration)
 
-	err = smtp.Send([]string{"lpiexecutive@gmail.com"}, "good morning!", "hey good morning budy!")
+	err = smtp.Send([]string{"lpiexecutive@gmail.com"}, "hey! infrast working", "this is message you get is from unit testing on infrast!")
 	assert.Empty(t, err)
 }
