@@ -24,7 +24,7 @@ import (
 	"github.com/smokers10/infrast/whatsapp"
 )
 
-type module struct {
+type Module struct {
 	DB                       contract.DatabaseContract
 	Encryption               contract.EncryptionContract
 	Identfier                contract.IdentfierContract
@@ -38,7 +38,7 @@ type module struct {
 	Configuration            *config.Configuration
 }
 
-func Head(path string, encryption_key string) (*module, error) {
+func Head(path string, encryption_key string) (*Module, error) {
 	art := figure.NewColorFigure("INFRAST", "", "red", true)
 	art.Print()
 	fmt.Printf("CREATED BY : smokers10 \n\n")
@@ -129,7 +129,7 @@ func Head(path string, encryption_key string) (*module, error) {
 		return nil, fmt.Errorf("error call postgre db : %v", err.Error())
 	}
 
-	modules := module{
+	modules := Module{
 		DB:                       database,
 		Encryption:               encryption,
 		Identfier:                identifier.Identifier(c),
@@ -195,7 +195,7 @@ func Head(path string, encryption_key string) (*module, error) {
 	return &modules, nil
 }
 
-func (h *module) Middleware(userType string) (contract.Middleware, error) {
+func (h *Module) Middleware(userType string) (contract.Middleware, error) {
 	m, err := middleware.Middleware(&h.Configuration.UserManagement, h.UserManagementRepository, h.JWT, userType)
 	if err != nil {
 		return nil, err
@@ -204,7 +204,7 @@ func (h *module) Middleware(userType string) (contract.Middleware, error) {
 	return m, nil
 }
 
-func (h *module) UserManagement(userType string) (contract.UserManagement, error) {
+func (h *Module) UserManagement(userType string) (contract.UserManagement, error) {
 	UM, err := usermanagement.UserManagement(h.Configuration, h.UserManagementRepository, h.Identfier, h.Encryption, h.JWT, h.Mailer, h.Whatsapp, h.TemplateProcessor, userType)
 	if err != nil {
 		return nil, err
