@@ -195,6 +195,7 @@ func TestUserFCMTokenStructureChecker(t *testing.T) {
 			{Field: "token"},
 			{Field: "timestamp"},
 			{Field: "user_type"},
+			{Field: "user_id"},
 		}
 		mockRepository.Mock.On("StructureGetter", mock.Anything).Return(columnsMatch, nil).Once()
 

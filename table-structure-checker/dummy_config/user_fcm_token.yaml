@@ -1,7 +1,8 @@
-user_management :
-  user_fcm_token :
-    table_name : "user_fcm"
-    id_property : "id"
-    token_property : "token"
-    timestamp_property : "timestamp"
-    user_type_property : "user_type"
+user_management:
+  user_fcm_token:
+    table_name: user_fcm
+    id_property: id
+    token_property: token
+    timestamp_property: timestamp
+    user_type_property: user_type
+    user_id_property: user_id

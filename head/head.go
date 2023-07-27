@@ -22,7 +22,6 @@ import (
 	usermanagement "github.com/smokers10/infrast/user-management"
 	usermanagementrepository "github.com/smokers10/infrast/user-management-repository"
 	"github.com/smokers10/infrast/whatsapp"
-	easy "github.com/t-tomalak/logrus-easy-formatter"
 )
 
 type Module struct {
@@ -44,19 +43,12 @@ func Head(path string, encryption_key string) (*Module, error) {
 	art.Print()
 	fmt.Printf("CREATED BY : smokers10 \n\n")
 
-	log := &logrus.Logger{
-		Formatter: &easy.Formatter{
-			TimestampFormat: "2006-01-02 15:04:05",
-			LogFormat:       "[%lvl%]: %time% - %msg%\n",
-		},
-	}
-
 	ch, err := config.ConfigurationHead(path)
 	if err != nil {
 		return nil, err
 	}
 	c := ch.Configuration
-	log.Info("configuration loaded")
+	logrus.Info("configuration loaded")
 
 	key := []byte(encryption_key)
 	encryption, err := encryption.Encryption(key)
@@ -145,7 +137,7 @@ func Head(path string, encryption_key string) (*Module, error) {
 
 		modules.Midtrans = midtrans
 	} else {
-		log.Warning("Midtrans Disabled")
+		logrus.Warning("Midtrans Disabled")
 	}
 
 	if c.Whatsapp.AuthToken != "" && c.Whatsapp.SID != "" {
@@ -156,7 +148,7 @@ func Head(path string, encryption_key string) (*Module, error) {
 
 		modules.Whatsapp = whatsapp
 	} else {
-		log.Warning("Whatsapp Disabled")
+		logrus.Warning("Whatsapp Disabled")
 	}
 
 	if c.Firebase.ServiceAccountKey != "" {
@@ -167,14 +159,14 @@ func Head(path string, encryption_key string) (*Module, error) {
 
 		modules.Firebase = firebase
 	} else {
-		log.Warning("Firebase Disabled")
+		logrus.Warning("Firebase Disabled")
 	}
 
 	if c.SMTP.Host != "" && c.SMTP.Password != "" {
 		mailer := mailer.Mailer(c)
 		modules.Mailer = mailer
 	} else {
-		log.Warning("SMTP disabled")
+		logrus.Warning("SMTP disabled")
 	}
 
 	database := database.Database(c)
@@ -185,7 +177,7 @@ func Head(path string, encryption_key string) (*Module, error) {
 	modules.UserManagementRepository = usermanagementrepository.UserManagementRepository(sql)
 	modules.DB = database
 
-	log.Info("modules ready")
+	logrus.Info("modules ready")
 
 	checkerRepo := tablestructurechecker.TableStructureCheckerRepository(sql)
 	checker := tablestructurechecker.TableStructureChecker(checkerRepo)
@@ -198,10 +190,10 @@ func Head(path string, encryption_key string) (*Module, error) {
 		lib.CheckResultLogFormat(checkResult)
 		return nil, errors.New("user management TSC error")
 	} else {
-		log.Info("user management ready!")
+		logrus.Info("user management ready!")
 	}
 
-	log.Info("Infrast OK!")
+	logrus.Info("Infrast OK!")
 
 	return &modules, nil
 }
