@@ -22,6 +22,7 @@ import (
 	usermanagement "github.com/smokers10/infrast/user-management"
 	usermanagementrepository "github.com/smokers10/infrast/user-management-repository"
 	"github.com/smokers10/infrast/whatsapp"
+	easy "github.com/t-tomalak/logrus-easy-formatter"
 )
 
 type Module struct {
@@ -43,14 +44,20 @@ func Head(path string, encryption_key string) (*Module, error) {
 	art.Print()
 	fmt.Printf("CREATED BY : smokers10 \n\n")
 
+	log := &logrus.Logger{
+		Formatter: &easy.Formatter{
+			TimestampFormat: "2006-01-02 15:04:05",
+			LogFormat:       "[%lvl%]: %time% - %msg%\n",
+		},
+	}
+
 	ch, err := config.ConfigurationHead(path)
 	if err != nil {
 		return nil, err
 	}
 	c := ch.Configuration
-	logrus.Info("configuration loaded")
+	log.Info("configuration loaded")
 
-	// get confidential information
 	key := []byte(encryption_key)
 	encryption, err := encryption.Encryption(key)
 	if err != nil {
@@ -122,22 +129,12 @@ func Head(path string, encryption_key string) (*Module, error) {
 		c.Firebase.ServiceAccountKey = sak
 	}
 
-	// prepare module
-	database := database.Database(c)
-	sql, err := database.PosgresSQL()
-	if err != nil {
-		return nil, fmt.Errorf("error call postgre db : %v", err.Error())
-	}
-
 	modules := Module{
-		DB:                       database,
-		Encryption:               encryption,
-		Identfier:                identifier.Identifier(c),
-		JWT:                      jsonwebtoken.JsonWebToken(c),
-		Mailer:                   mailer.Mailer(c),
-		TemplateProcessor:        templateprocessor.TemplateProccessor(),
-		UserManagementRepository: usermanagementrepository.UserManagementRepository(sql),
-		Configuration:            c,
+		Encryption:        encryption,
+		Identfier:         identifier.Identifier(c),
+		JWT:               jsonwebtoken.JsonWebToken(c),
+		TemplateProcessor: templateprocessor.TemplateProccessor(),
+		Configuration:     c,
 	}
 
 	if c.Midtrans.ServerKey != "" || c.Midtrans.IrisKey != "" {
@@ -148,7 +145,7 @@ func Head(path string, encryption_key string) (*Module, error) {
 
 		modules.Midtrans = midtrans
 	} else {
-		logrus.Warning("Midtrans Disabled")
+		log.Warning("Midtrans Disabled")
 	}
 
 	if c.Whatsapp.AuthToken != "" && c.Whatsapp.SID != "" {
@@ -159,7 +156,7 @@ func Head(path string, encryption_key string) (*Module, error) {
 
 		modules.Whatsapp = whatsapp
 	} else {
-		logrus.Warning("Whatsapp Disabled")
+		log.Warning("Whatsapp Disabled")
 	}
 
 	if c.Firebase.ServiceAccountKey != "" {
@@ -170,12 +167,26 @@ func Head(path string, encryption_key string) (*Module, error) {
 
 		modules.Firebase = firebase
 	} else {
-		logrus.Warning("Firebase Disabled")
+		log.Warning("Firebase Disabled")
 	}
 
-	logrus.Info("modules all set")
+	if c.SMTP.Host != "" && c.SMTP.Password != "" {
+		mailer := mailer.Mailer(c)
+		modules.Mailer = mailer
+	} else {
+		log.Warning("SMTP disabled")
+	}
 
-	// User management table structur check
+	database := database.Database(c)
+	sql, err := database.PosgresSQL()
+	if err != nil {
+		return nil, fmt.Errorf("error call postgre db : %v", err.Error())
+	}
+	modules.UserManagementRepository = usermanagementrepository.UserManagementRepository(sql)
+	modules.DB = database
+
+	log.Info("modules ready")
+
 	checkerRepo := tablestructurechecker.TableStructureCheckerRepository(sql)
 	checker := tablestructurechecker.TableStructureChecker(checkerRepo)
 	checkResult, err := checker.StructureChecker(&c.UserManagement)
@@ -187,10 +198,10 @@ func Head(path string, encryption_key string) (*Module, error) {
 		lib.CheckResultLogFormat(checkResult)
 		return nil, errors.New("user management TSC error")
 	} else {
-		logrus.Info("user management ready!")
+		log.Info("user management ready!")
 	}
 
-	logrus.Info("Infrast OK!")
+	log.Info("Infrast OK!")
 
 	return &modules, nil
 }

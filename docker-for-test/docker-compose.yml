@@ -22,21 +22,3 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-
-  mongodb:
-    image: mongo:latest
-    container_name: infrast-mongodb
-    networks:
-      - infrast-net
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: infrast
-      MONGO_INITDB_ROOT_PASSWORD: infrastpass
-    volumes:
-      - ./mongodata:/data/db
-    ports:
-      - '27017:27017'
-    healthcheck:
-      test: ["CMD", "mongo", "--eval", "db.adminCommand('ping')"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
