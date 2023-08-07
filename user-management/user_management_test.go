@@ -32,7 +32,7 @@ var (
 				NewDeviceWarningMessageTemplate:   "you logged at another device klick link bellow to logout\n\n%v",
 				ForgotPasswordMessageTemplate:     "your reset password opt is %v",
 			},
-			UserCredential: []config.UserCredential{
+			Users: []config.User{
 				{
 					Type:                 "Admin",
 					UserTable:            "admins",
@@ -515,7 +515,7 @@ func TestUpdateUserPassword(t *testing.T) {
 func TestUserMatch(t *testing.T) {
 	config := config.Configuration{
 		UserManagement: config.UserManagementConfig{
-			UserCredential: []config.UserCredential{
+			Users: []config.User{
 				{
 					Type:                 "Admin",
 					UserTable:            "admins",

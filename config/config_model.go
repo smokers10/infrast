@@ -29,14 +29,14 @@ type SMTPConfig struct {
 	Sender   string `yaml:"sender"`
 }
 type UserManagementConfig struct {
-	UserCredential     []UserCredential    `yaml:"user_credential"`
+	Users              []User              `yaml:"users"`
 	Login              LoginConfig         `yaml:"login"`
 	Registration       RegistrationConfig  `yaml:"registration"`
 	ResetPassword      ResetPasswordConfig `yaml:"reset_password"`
 	UserDevice         UserDeviceConfig    `yaml:"user_device"`
 	UserFCMToken       UserFCMTokenConfig  `yaml:"user_fcm_token"`
 	MessageTemplate    MessageTemplate     `yaml:"message_template"`
-	SelectedCredential UserCredential
+	SelectedCredential User
 }
 type MessageTemplate struct {
 	NewRegistrationEmailTemplatePath  string `yaml:"new_registration_email_template_path"`
@@ -48,7 +48,7 @@ type MessageTemplate struct {
 	LoginCancelationURL               string `yaml:"login_cancelation_url"`
 }
 
-type UserCredential struct {
+type User struct {
 	Type                 string   `yaml:"type"`
 	UserTable            string   `yaml:"user_table"`
 	Credential           []string `yaml:"credential"`

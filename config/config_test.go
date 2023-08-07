@@ -82,13 +82,13 @@ func TestReader(t *testing.T) {
 
 	t.Run("user management", func(t *testing.T) {
 		c := c.Configuration.UserManagement
-		assert.NotEmpty(t, c.UserCredential)
+		assert.NotEmpty(t, c.Users)
 		assert.NotEmpty(t, c.Login)
 		assert.NotEmpty(t, c.Registration)
 		assert.NotEmpty(t, c.ResetPassword)
-		t.Run("user credential check", func(t *testing.T) {
-			t.Logf("user credential length : %v", len(c.UserCredential))
-			for _, v := range c.UserCredential {
+		t.Run("user check", func(t *testing.T) {
+			t.Logf("user length : %v", len(c.Users))
+			for _, v := range c.Users {
 				assert.NotEmpty(t, v.IDProperty)
 				assert.NotEmpty(t, v.PhotoProfileProperty)
 				assert.NotEmpty(t, v.Credential)

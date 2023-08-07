@@ -738,8 +738,8 @@ func (i *userManagementImplementation) SendMessageRegistration(otp string, crede
 }
 
 func UserManagement(configuration *config.Configuration, repository contract.UserManagementRepository, uuid contract.IdentfierContract, encryption contract.EncryptionContract, jwt contract.JsonWebTokenContract, mailer contract.MailerContract, wa contract.Whatsapp, template_processor contract.TemplateProcessor, user_type string) (contract.UserManagement, error) {
-	selectedUserCredential := config.UserCredential{}
-	for _, v := range configuration.UserManagement.UserCredential {
+	selectedUserCredential := config.User{}
+	for _, v := range configuration.UserManagement.Users {
 		if v.Type == user_type {
 			selectedUserCredential = v
 			break

@@ -45,9 +45,9 @@ func (i *tableStructureCheckerImplementation) StructureChecker(umc *config.UserM
 			}
 		}
 
-		for idx, v := range umc.UserCredential {
+		for idx, v := range umc.Users {
 			if v.UserTable == tableName {
-				userCredentialCheck := userCredentailCheck(column, &umc.UserCredential[idx])
+				userCredentialCheck := userCredentailCheck(column, &umc.Users[idx])
 				if len(userCredentialCheck) != 0 {
 					dump.Mismatch = append(dump.Mismatch, userCredentialCheck...)
 				}
@@ -101,8 +101,8 @@ func tableToCheck(umc *config.UserManagementConfig) []string {
 		tableToCheck = append(tableToCheck, umc.UserFCMToken.TableName)
 	}
 
-	if len(umc.UserCredential) != 0 {
-		for _, v := range umc.UserCredential {
+	if len(umc.Users) != 0 {
+		for _, v := range umc.Users {
 			tableToCheck = append(tableToCheck, v.UserTable)
 		}
 	}
@@ -242,36 +242,36 @@ func resetPasswordCheck(columns []contract.Column, resetPasswordConfig *config.R
 }
 
 // func to check user credential table property
-func userCredentailCheck(columns []contract.Column, userCredentialConfig *config.UserCredential) []string {
+func userCredentailCheck(columns []contract.Column, userConfig *config.User) []string {
 	listMismatch := []string{}
 
 	// check EmailProperty
-	if EmailProperty := isMatch(columns, userCredentialConfig.EmailProperty); EmailProperty != "" {
+	if EmailProperty := isMatch(columns, userConfig.EmailProperty); EmailProperty != "" {
 		listMismatch = append(listMismatch, EmailProperty)
 	}
 
 	// check IDProperty
-	if IDProperty := isMatch(columns, userCredentialConfig.IDProperty); IDProperty != "" {
+	if IDProperty := isMatch(columns, userConfig.IDProperty); IDProperty != "" {
 		listMismatch = append(listMismatch, IDProperty)
 	}
 
 	// check PasswordProperty
-	if PasswordProperty := isMatch(columns, userCredentialConfig.PasswordProperty); PasswordProperty != "" {
+	if PasswordProperty := isMatch(columns, userConfig.PasswordProperty); PasswordProperty != "" {
 		listMismatch = append(listMismatch, PasswordProperty)
 	}
 
 	// check PhoneProperty
-	if PhoneProperty := isMatch(columns, userCredentialConfig.PhoneProperty); PhoneProperty != "" {
+	if PhoneProperty := isMatch(columns, userConfig.PhoneProperty); PhoneProperty != "" {
 		listMismatch = append(listMismatch, PhoneProperty)
 	}
 
 	// check PhotoProfileProperty
-	if PhotoProfileProperty := isMatch(columns, userCredentialConfig.PhotoProfileProperty); PhotoProfileProperty != "" {
+	if PhotoProfileProperty := isMatch(columns, userConfig.PhotoProfileProperty); PhotoProfileProperty != "" {
 		listMismatch = append(listMismatch, PhotoProfileProperty)
 	}
 
 	// check UsernameProperty
-	if UsernameProperty := isMatch(columns, userCredentialConfig.UsernameProperty); UsernameProperty != "" {
+	if UsernameProperty := isMatch(columns, userConfig.UsernameProperty); UsernameProperty != "" {
 		listMismatch = append(listMismatch, UsernameProperty)
 	}
 

@@ -41,7 +41,7 @@ type Module struct {
 func Head(path string, encryption_key string) (*Module, error) {
 	art := figure.NewColorFigure("INFRAST", "", "red", true)
 	art.Print()
-	fmt.Printf("CREATED BY : smokers10 \n\n")
+	fmt.Printf("CREATED BY: smokers10 \n\n")
 
 	ch, err := config.ConfigurationHead(path)
 	if err != nil {
@@ -188,9 +188,9 @@ func Head(path string, encryption_key string) (*Module, error) {
 
 	if len(checkResult) != 0 {
 		lib.CheckResultLogFormat(checkResult)
-		return nil, errors.New("user management TSC error")
+		return nil, errors.New("user management -> TSC error")
 	} else {
-		logrus.Info("user management ready!")
+		logrus.Info("user management -> TSC OK")
 	}
 
 	logrus.Info("Infrast OK!")

@@ -45,7 +45,7 @@ user_management :
     new_device_warning_message_template : you logged on another device klick URL bellow to log out %v
     forgot_password_message_template : your reset password otp is %v please don't share to anybody
     login_cancelation_url : http://localhost:8000/cancel-login/%s #require 1 parameter to place device id
-  user_credential : [
+  users : [
     {
       type : ADMIN,
       user_table : admins,

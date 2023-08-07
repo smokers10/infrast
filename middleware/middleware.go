@@ -151,8 +151,8 @@ func (i *MiddlewareImpl) Authenticate(token string, device_id string) (*contract
 }
 
 func Middleware(user_management_conf *config.UserManagementConfig, repository contract.UserManagementRepository, jwt contract.JsonWebTokenContract, user_type string) (contract.Middleware, error) {
-	selectedUserCredential := config.UserCredential{}
-	for _, v := range user_management_conf.UserCredential {
+	selectedUserCredential := config.User{}
+	for _, v := range user_management_conf.Users {
 		if v.Type == user_type {
 			selectedUserCredential = v
 			break
@@ -160,7 +160,7 @@ func Middleware(user_management_conf *config.UserManagementConfig, repository co
 	}
 
 	registeredUserType := []string{}
-	for _, v := range user_management_conf.UserCredential {
+	for _, v := range user_management_conf.Users {
 		registeredUserType = append(registeredUserType, v.Type)
 	}
 

@@ -15,51 +15,51 @@ here the module we provided for your project :
 * Middleware
 
 # How To Use
-## Step 1 : Installation
+## Step 1: Installation
 first add go-infrast package to your project, by using this command :
 ```
 go get github.com/smokers10/go-infrast
 ```
-## Step 2 : Configuration
+## Step 2: Configuration
 here the example of configuration file you can follow :
 ```
 application :
-  port : :8000
-  secret : your-encrypted-secret
-postgres : 
-  host : localhost
-  port : 5432
-  user : testuser
-  password : your-encrypted-postgres-password
-  db_name : testdb
-  max_open_connections : 1
-  max_idle_connections : 2
-  connection_max_life_time : 2
-mongodb : 
-  uri : your-encrypted-mongo-uri
-  max_pool : 10
-  min_pool : 5
-  max_idle_connections : 2
-  db_name : testdb
-smtp : 
-  host : localhost
-  password : your-encrypted-smtp-password
-  username : testuser
-  port : 5432
-  sender : sender
+  port: :8000
+  secret: your-encrypted-secret
+postgres: 
+  host: localhost
+  port: 5432
+  user: testuser
+  password: your-encrypted-postgres-password
+  db_name: testdb
+  max_open_connections: 1
+  max_idle_connections: 2
+  connection_max_life_time: 2
+mongodb: 
+  uri: your-encrypted-mongo-uri
+  max_pool: 10
+  min_pool: 5
+  max_idle_connections: 2
+  db_name: testdb
+smtp: 
+  host: localhost
+  password: your-encrypted-smtp-password
+  username: testuser
+  port: 5432
+  sender: sender
 midtrans :
-  server_key : your-encrypted-midtrans-server-key
-  iris_key : your-encrypted-midtrans-iris-key
-  enabled_payments : 
+  server_key: your-encrypted-midtrans-server-key
+  iris_key: your-encrypted-midtrans-iris-key
+  enabled_payments: 
     - bca-klik
     - bri
     - gopay
 whatsapp :
-  sid : wa-sid
-  auth_token : encrypted-auth-token
-  sender : +628<...>
-firebase : 
-  service_account_key : your-encrypted-service-account-key
+  sid: wa-sid
+  auth_token: encrypted-auth-token
+  sender: +628<...>
+firebase: 
+  service_account_key: your-encrypted-service-account-key
 ```
 
 <b> WARNING </b>
@@ -85,8 +85,8 @@ As you can see the firebase configuration required firebase service account key,
 5. encrypt your encoded private key using [enigma](https://github.com/smokers10/enigma).
 6. Set encrypted private key to your configuration YAML.
 
-### Step 3 : Initialize Infrast
-here the code example on how to use infrast with fiber framework : 
+### Step 3: Initialize Infrast
+here the code example on how to use infrast with fiber framework: 
 ```
 package main
 
@@ -114,88 +114,87 @@ func main() {
 <b>Note</b> you can make your own AES key based on [this](https://pkg.go.dev/crypto/aes#pkg-variables) documentation or use auto generated key by [enigma](https://github.com/smokers10/enigma)
 
 # User Management & Middleware
-## Step 1 : Configuration
-To use user management & middleware you should add more configuration to your YAML file, here the configuration : 
+## Step 1: Configuration
+To use user management & middleware you should add more configuration to your YAML file, here the configuration: 
 ```
 user_management :
-  message_template : 
-    new_registration_email_template_path : template/new-registration.html
-    new_device_warning_email_template_path : template/new-device.html
-    forgot_password_email_template_path : template/forgot-passwrod.html
-    new_registration_message_template : your registration otp is %v please don't share to anybody
-    new_device_warning_message_template : you logged on another device klick URL bellow to log out %v
-    forgot_password_message_template : your reset password otp is %v please don't share to anybody
-    login_cancelation_url : http://localhost:8000/cancel-login/%s
-  user_credential : [
+  message_template: 
+    new_registration_email_template_path: template/new-registration.html
+    new_device_warning_email_template_path: template/new-device.html
+    forgot_password_email_template_path: template/forgot-passwrod.html
+    new_registration_message_template: your registration otp is %v please don't share to anybody
+    new_device_warning_message_template: you logged on another device klick URL bellow to log out %v
+    forgot_password_message_template: your reset password otp is %v please don't share to anybody
+    login_cancelation_url: http://localhost:8000/cancel-login/%s #require 1 parameter to place device id
+  users: [
     {
-      type : "ADMIN",
-      user_table : "admins",
-      credential : ["username", "email"],
-      id_property : "id",
-      photo_profile_property : "profile",
-      password_property : "password",
-      username_property : "username",
-      email_property : "email",
-      phone_property : "phone"
+      type: ADMIN,
+      user_table: admins,
+      credential: [username, email],
+      id_property: id,
+      photo_profile_property: profile,
+      password_property: password,
+      username_property: username,
+      email_property: email,
+      phone_property: phone
     },
     {
-      type : "customer",
-      user_table : "customers",
-      credential : ["username", "email", "phone"],
-      id_property : "id",
-      photo_profile_property : "profile",
-      password_property : "password",
-      username_property : "username",
-      email_property : "email",
-      phone_property : "phone"
+      type: customer,
+      user_table: customers,
+      credential: [username, email, phone],
+      id_property: id,
+      photo_profile_property: profile,
+      password_property: password,
+      username_property: username,
+      email_property: email,
+      phone_property: phone
     },
   ]
-  login : 
-    table_name : "login"
-    token_property : "token"
-    failed_counter_property : "failed_attempt"
-    type_property : "user_type"
-    credential_property : "credential"
-    login_at_property : "login_at"
-    device_id_property : "device_id"
-    attempt_at_property : "attempt_at"
-    max_failed_attempt : 3
-    login_block_duration : 300
-    email_template_path : "template/login-security-concern.html"
-  user_device : 
-    table_name : "user_devices"
-    id_property : "id"
-    device_id_property : "device_id"
-    user_id_property : "user_id"
-    user_type_property : "user_type"
-    email_template_path : "template/new-device-warning.html"
-  registration : 
-    table_name : "registration"
-    id_property : "id"
-    credential_property : "credential"
-    token_property : "token"
-    otp_property : "otp"
-    registration_status_property : "status"
-    device_id_property : "device_id"
-    created_at_property : "created_at"
-    email_template_path : "template/registration.html"
-    user_type_property : "user_type"
-  reset_password : 
-    table_name : "reset_password"
-    id_property : "id"
-    token_property : "token"
-    otp_property : "otp"
-    credential_property : "credential"
-    created_at_property : "created_at"
-    validity_duration : 900000
-    email_template_path : "template/forgot-password.html"
-    user_type_property : "user_type"
+  login: 
+    table_name: login
+    token_property: token
+    failed_counter_property: failed_attempt
+    type_property: user_type
+    credential_property: credential
+    login_at_property: login_at
+    device_id_property: device_id
+    attempt_at_property: attempt_at
+    max_failed_attempt: 3
+    login_block_duration: 300
+  user_device: 
+    table_name: user_devices
+    id_property: id
+    device_id_property: device_id
+    user_id_property: user_id
+    user_type_property: user_type
+  registration: 
+    table_name: registration
+    id_property: id
+    credential_property: credential
+    token_property: token
+    otp_property: otp
+    registration_status_property: status
+    device_id_property: device_id
+    created_at_property: created_at
+    user_type_property: user_type
+    fcm_token_property: fcm_token
+  reset_password: 
+    table_name: reset_password
+    id_property: id
+    token_property: token
+    otp_property: otp
+    credential_property: credential
+    created_at_property: created_at
+    validity_duration: 900000
+    user_type_property: user_type
   user_fcm_token :
-    table_name : "user_fcm"
-    id_property : "id"
-    token_property : "token"
-    timestamp_property : "timestamp"
-    user_type_property : "user_type"
+    table_name: user_fcm
+    id_property: id
+    token_property: token
+    timestamp_property: timestamp
+    user_type_property: user_type
+    user_id_property: user_id
+
 ```
 as you can see from yaml above you should have following table on your system <br>
 1. User Table
@@ -205,8 +204,8 @@ as you can see from yaml above you should have following table on your system <b
 5. Reset Password Table
 6. User FCM Token Table
 
-note : on each table you need to define required property infrast will detect your table structure to check if you define required table property.
-## Step 2 : Call User Management Or Middleware
+note: on each table you need to define required property infrast will detect your table structure to check if you define required table property.
+## Step 2: Call User Management Or Middleware
 ```
 package main
 
@@ -235,7 +234,7 @@ func main() {
 ```
 ## Message Template Explanation
 As you can see infrast configuration on user management there is a `message_template`, this configuration is used to make infrast detect email and WA message template on you sistem
-so infrast can send notification to user when some condition occured such us registration verification, forgot password and new device login notification. Here de detailed explanation on each configuration : 
+so infrast can send notification to user when some condition occured such us registration verification, forgot password and new device login notification. Here de detailed explanation on each configuration: 
 <table>
   <tr>
     <th>Configuration Name</th>

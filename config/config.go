@@ -44,16 +44,16 @@ func (ch *configurationHead) read(path string) (*Configuration, error) {
 		return nil, err
 	}
 
-	result.UserManagement.UserCredential = ch.prepareUserCredential(result.UserManagement.UserCredential)
+	result.UserManagement.Users = ch.prepareUserCredential(result.UserManagement.Users)
 
 	ch.Configuration = &result
 
 	return &result, nil
 }
 
-func (ch *configurationHead) prepareUserCredential(userCredentials []UserCredential) (results []UserCredential) {
+func (ch *configurationHead) prepareUserCredential(userCredentials []User) (results []User) {
 	for _, v := range userCredentials {
-		UCTemp := UserCredential{
+		UCTemp := User{
 			Type:                 strings.ToLower(v.Type),
 			UserTable:            strings.ToLower(v.UserTable),
 			IDProperty:           strings.ToLower(v.IDProperty),
@@ -76,11 +76,11 @@ func (ch *configurationHead) prepareUserCredential(userCredentials []UserCredent
 func (ch *configurationHead) RegisteredUserType() ([]string, error) {
 	userTypes := []string{}
 
-	if len(ch.Configuration.UserManagement.UserCredential) == 0 {
+	if len(ch.Configuration.UserManagement.Users) == 0 {
 		return nil, errors.New("no user credential data! make sure your configuration YAML is following the prefered format or call the read method first")
 	}
 
-	for _, v := range ch.Configuration.UserManagement.UserCredential {
+	for _, v := range ch.Configuration.UserManagement.Users {
 		userTypes = append(userTypes, v.Type)
 	}
 

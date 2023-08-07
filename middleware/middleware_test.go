@@ -52,7 +52,7 @@ func TestAuthenticate(t *testing.T) {
 			Secret: "this app test secret",
 		},
 		UserManagement: config.UserManagementConfig{
-			UserCredential: []config.UserCredential{
+			Users: []config.User{
 				{
 					Type:                 "admin",
 					UserTable:            "admins",
