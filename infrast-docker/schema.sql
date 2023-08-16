@@ -1,9 +1,3 @@
--- public.devices definition
-
--- Drop table
-
--- DROP TABLE public.devices;
-
 CREATE TABLE public.devices (
 	id int8 NOT NULL GENERATED ALWAYS AS IDENTITY( INCREMENT BY 1 MINVALUE 1 MAXVALUE 9223372036854775807 START 1 CACHE 1 NO CYCLE),
 	device_id text NULL,
@@ -11,13 +5,6 @@ CREATE TABLE public.devices (
 	user_type varchar(10) NULL,
 	CONSTRAINT devices_pkey PRIMARY KEY (id)
 );
-
-
--- public.login definition
-
--- Drop table
-
--- DROP TABLE public.login;
 
 CREATE TABLE public.login (
 	id int8 NOT NULL GENERATED ALWAYS AS IDENTITY( INCREMENT BY 1 MINVALUE 1 MAXVALUE 9223372036854775807 START 1 CACHE 1 NO CYCLE),
@@ -30,13 +17,6 @@ CREATE TABLE public.login (
 	user_type varchar(10) NULL,
 	CONSTRAINT login_pkey PRIMARY KEY (id)
 );
-
-
--- public.registration definition
-
--- Drop table
-
--- DROP TABLE public.registration;
 
 CREATE TABLE public.registration (
 	id int8 NOT NULL GENERATED ALWAYS AS IDENTITY( INCREMENT BY 1 MINVALUE 1 MAXVALUE 9223372036854775807 START 1 CACHE 1 NO CYCLE),
@@ -51,13 +31,6 @@ CREATE TABLE public.registration (
 	CONSTRAINT registration_pkey PRIMARY KEY (id)
 );
 
-
--- public.reset_password definition
-
--- Drop table
-
--- DROP TABLE public.reset_password;
-
 CREATE TABLE public.reset_password (
 	id int8 NOT NULL GENERATED ALWAYS AS IDENTITY( INCREMENT BY 1 MINVALUE 1 MAXVALUE 9223372036854775807 START 1 CACHE 1 NO CYCLE),
 	"token" text NULL,
@@ -68,13 +41,6 @@ CREATE TABLE public.reset_password (
 	CONSTRAINT reset_password_pkey PRIMARY KEY (id)
 );
 
-
--- public.user_fcm definition
-
--- Drop table
-
--- DROP TABLE public.user_fcm;
-
 CREATE TABLE public.user_fcm (
 	id int8 NOT NULL GENERATED ALWAYS AS IDENTITY( INCREMENT BY 1 MINVALUE 1 MAXVALUE 9223372036854775807 START 1 CACHE 1 NO CYCLE),
 	fcm_token text NULL,
@@ -83,13 +49,6 @@ CREATE TABLE public.user_fcm (
 	user_id int8 NULL,
 	CONSTRAINT user_fcm_pkey PRIMARY KEY (id)
 );
-
-
--- public.users definition
-
--- Drop table
-
--- DROP TABLE public.users;
 
 CREATE TABLE public.users (
 	id int8 NOT NULL GENERATED ALWAYS AS IDENTITY( INCREMENT BY 1 MINVALUE 1 MAXVALUE 9223372036854775807 START 1 CACHE 1 NO CYCLE),

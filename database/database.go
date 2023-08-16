@@ -18,50 +18,72 @@ type databaseImplementation struct {
 }
 
 // MongoDB implements contract.DatabaseContract
-func (i *databaseImplementation) MongoDB() (*mongo.Database, error) {
-	ctx, cancel := lib.InitializeContex()
-	defer cancel()
+func (i *databaseImplementation) MongoDB() ([]contract.MongoDBInstance, error) {
+	c := i.Config.MongoDB
+	instances := []contract.MongoDBInstance{}
 
-	// set configuration
-	option := options.Client().
-		ApplyURI(i.Config.MongoDB.URI).
-		SetMaxPoolSize(uint64(i.Config.MongoDB.MaxPool)).
-		SetMinPoolSize(uint64(i.Config.MongoDB.MinPool)).
-		SetMaxConnIdleTime(time.Duration(i.Config.MongoDB.MaxIdleConnections))
+	for i := 0; i < len(c); i++ {
+		ctx, cancel := lib.InitializeContex()
+		defer cancel()
 
-	// set up connection
-	client, err := mongo.NewClient(option)
-	if err != nil {
-		return nil, err
+		// set configuration
+		option := options.Client().
+			ApplyURI(c[i].URI).
+			SetMaxPoolSize(uint64(c[i].MaxPool)).
+			SetMinPoolSize(uint64(c[i].MinPool)).
+			SetMaxConnIdleTime(time.Duration(c[i].MaxIdleConnections))
+
+		// set up connection
+		client, err := mongo.Connect(ctx, option)
+		if err != nil {
+			return nil, err
+		}
+
+		// start connection
+		db := client.Database(c[i].DBName)
+
+		// append db instance
+		instance := contract.MongoDBInstance{
+			Label:    c[i].Label,
+			Instance: db,
+		}
+
+		instances = append(instances, instance)
 	}
 
-	// start connection
-	client.Connect(ctx)
-	db := client.Database(i.Config.MongoDB.DBName)
-
 	// return database
-	return db, nil
+	return instances, nil
 }
 
 // PosgresSQL implements contract.DatabaseContract
-func (i *databaseImplementation) PosgresSQL() (*sql.DB, error) {
+func (i *databaseImplementation) PosgresSQL() ([]contract.PGInstance, error) {
 	c := i.Config.PostgreSQL
+	instances := []contract.PGInstance{}
 
-	// Connection string
-	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", c.Host, c.Port, c.User, c.Password, c.DBName)
+	for i := 0; i < len(c); i++ {
+		// Connection string
+		connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", c[i].Host, c[i].Port, c[i].User, c[i].Password, c[i].DBName)
 
-	// Open the database connection
-	db, err := sql.Open("postgres", connStr)
-	if err != nil {
-		return nil, err
+		// Open the database connection
+		db, err := sql.Open("postgres", connStr)
+		if err != nil {
+			return nil, err
+		}
+
+		// Set connection pool settings
+		db.SetMaxOpenConns(c[i].MaxOpenConnections)
+		db.SetMaxIdleConns(c[i].MaxIdleConnections)
+		db.SetConnMaxLifetime(time.Duration(c[i].ConnectionMaxLifeTime))
+
+		// appending instances
+		instance := contract.PGInstance{
+			Label:    c[i].Label,
+			Instance: db,
+		}
+		instances = append(instances, instance)
 	}
 
-	// Set connection pool settings
-	db.SetMaxOpenConns(c.MaxOpenConnections)
-	db.SetMaxIdleConns(c.MaxIdleConnections)
-	db.SetConnMaxLifetime(time.Duration(c.ConnectionMaxLifeTime))
-
-	return db, nil
+	return instances, nil
 }
 
 func Database(Config *config.Configuration) contract.DatabaseContract {

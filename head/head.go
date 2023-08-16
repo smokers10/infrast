@@ -43,89 +43,32 @@ func Head(path string, encryption_key string) (*Module, error) {
 	art.Print()
 	fmt.Printf("CREATED BY: smokers10 \n\n")
 
+	// read configuration
 	ch, err := config.ConfigurationHead(path)
 	if err != nil {
 		return nil, err
 	}
 	c := ch.Configuration
-	logrus.Info("configuration loaded")
 
+	// read encrypted confugration value and assign to 'c' variable
 	key := []byte(encryption_key)
 	encryption, err := encryption.Encryption(key)
 	if err != nil {
 		return nil, fmt.Errorf("error preparing encryption : %v", err)
 	}
-
-	if c.Application.Secret != "" {
-		secret, err := encryption.Decrypt(c.Application.Secret)
-		if err != nil {
-			return nil, fmt.Errorf("error to read smtp password (plaintext not allowed): %v", err.Error())
-		}
-		c.Application.Secret = string(secret)
+	nc, err := readEncryptedConfig(c, encryption)
+	if err != nil {
+		return nil, err
 	}
+	c = nc
 
-	if c.PostgreSQL.Password != "" {
-		postgresPassword, err := encryption.Decrypt(c.PostgreSQL.Password)
-		if err != nil {
-			return nil, fmt.Errorf("error to read postgre password (plaintext not allowed): %v", err.Error())
-		}
-		c.PostgreSQL.Password = string(postgresPassword)
-	}
-
-	if c.MongoDB.URI != "" {
-		mongodbURI, err := encryption.Decrypt(c.MongoDB.URI)
-		if err != nil {
-			return nil, fmt.Errorf("error to read mongodb uri (plaintext not allowed): %v", err.Error())
-		}
-
-		c.MongoDB.URI = string(mongodbURI)
-	}
-
-	if c.SMTP.Password != "" {
-		smtpPassword, err := encryption.Decrypt(c.SMTP.Password)
-		if err != nil {
-			return nil, fmt.Errorf("error to read smtp password (plaintext not allowed): %v", err.Error())
-		}
-		c.SMTP.Password = string(smtpPassword)
-	}
-
-	if c.Midtrans.ServerKey != "" {
-		midtransServerKey, err := encryption.Decrypt(c.Midtrans.ServerKey)
-		if err != nil {
-			return nil, fmt.Errorf("error to read midtrans server key (plaintext not allowed): %v", err.Error())
-		}
-		c.Midtrans.ServerKey = string(midtransServerKey)
-	}
-
-	if c.Midtrans.IrisKey != "" {
-		irisKey, err := encryption.Decrypt(c.Midtrans.IrisKey)
-		if err != nil {
-			return nil, fmt.Errorf("error to read midtrans iris key (plaintext not allowed): %v", err.Error())
-		}
-		c.Midtrans.IrisKey = string(irisKey)
-	}
-
-	if c.Whatsapp.AuthToken != "" {
-		authToken, err := encryption.Decrypt(c.Whatsapp.AuthToken)
-		if err != nil {
-			return nil, fmt.Errorf("error to read whatsapp auth token (plaintext not allowed): %v", err.Error())
-		}
-		c.Whatsapp.AuthToken = authToken
-	}
-
-	if c.Firebase.ServiceAccountKey != "" {
-		sak, err := encryption.Decrypt(c.Firebase.ServiceAccountKey)
-		if err != nil {
-			return nil, fmt.Errorf("error to read whatsapp auth token (plaintext not allowed): %v", err.Error())
-		}
-		c.Firebase.ServiceAccountKey = sak
-	}
-
+	// decalaration of infrast modules
 	modules := Module{
 		Encryption:        encryption,
 		Identfier:         identifier.Identifier(c),
 		JWT:               jsonwebtoken.JsonWebToken(c),
 		TemplateProcessor: templateprocessor.TemplateProccessor(),
+		DB:                database.Database(c),
 		Configuration:     c,
 	}
 
@@ -136,8 +79,6 @@ func Head(path string, encryption_key string) (*Module, error) {
 		}
 
 		modules.Midtrans = midtrans
-	} else {
-		logrus.Warning("Midtrans Disabled")
 	}
 
 	if c.Whatsapp.AuthToken != "" && c.Whatsapp.SID != "" {
@@ -147,8 +88,6 @@ func Head(path string, encryption_key string) (*Module, error) {
 		}
 
 		modules.Whatsapp = whatsapp
-	} else {
-		logrus.Warning("Whatsapp Disabled")
 	}
 
 	if c.Firebase.ServiceAccountKey != "" {
@@ -158,34 +97,30 @@ func Head(path string, encryption_key string) (*Module, error) {
 		}
 
 		modules.Firebase = firebase
-	} else {
-		logrus.Warning("Firebase Disabled")
 	}
 
 	if c.SMTP.Host != "" && c.SMTP.Password != "" {
 		mailer := mailer.Mailer(c)
 		modules.Mailer = mailer
-	} else {
-		logrus.Warning("SMTP disabled")
 	}
 
-	database := database.Database(c)
-	sql, err := database.PosgresSQL()
+	PGInstances, err := modules.DB.PosgresSQL()
 	if err != nil {
 		return nil, fmt.Errorf("error call postgre db : %v", err.Error())
 	}
-	modules.UserManagementRepository = usermanagementrepository.UserManagementRepository(sql)
-	modules.DB = database
 
-	logrus.Info("modules ready")
-
-	checkerRepo := tablestructurechecker.TableStructureCheckerRepository(sql)
-	checker := tablestructurechecker.TableStructureChecker(checkerRepo)
-	checkResult, err := checker.StructureChecker(&c.UserManagement)
+	UMInstance, err := getUserManagementPGInstance(PGInstances, c.Application.UserManagementPGInstance)
 	if err != nil {
 		return nil, err
 	}
 
+	modules.UserManagementRepository = usermanagementrepository.UserManagementRepository(UMInstance.Instance)
+	tableStructureChecker := tablestructurechecker.TableStructureCheckerRepository(UMInstance.Instance)
+	checker := tablestructurechecker.TableStructureChecker(tableStructureChecker)
+	checkResult, err := checker.StructureChecker(&c.UserManagement)
+	if err != nil {
+		return nil, err
+	}
 	if len(checkResult) != 0 {
 		lib.CheckResultLogFormat(checkResult)
 		return nil, errors.New("user management -> TSC error")
@@ -194,8 +129,92 @@ func Head(path string, encryption_key string) (*Module, error) {
 	}
 
 	logrus.Info("Infrast OK!")
-
 	return &modules, nil
+}
+
+// read encrypted config value
+func readEncryptedConfig(c *config.Configuration, encryption contract.EncryptionContract) (*config.Configuration, error) {
+	if c.Application.Secret != "" {
+		secret, err := encryption.Decrypt(c.Application.Secret)
+		if err != nil {
+			return nil, fmt.Errorf("error to read application secret: %v", err.Error())
+		}
+		c.Application.Secret = string(secret)
+	}
+
+	for i := 0; i < len(c.PostgreSQL); i++ {
+		if c.PostgreSQL[i].Password != "" {
+			postgresPassword, err := encryption.Decrypt(c.PostgreSQL[i].Password)
+			if err != nil {
+				return nil, fmt.Errorf("error to read postgre password: %v", err.Error())
+			}
+			c.PostgreSQL[i].Password = string(postgresPassword)
+		}
+	}
+
+	for i := 0; i < len(c.MongoDB); i++ {
+		if c.MongoDB[i].URI != "" {
+			mongodbURI, err := encryption.Decrypt(c.MongoDB[i].URI)
+			if err != nil {
+				return nil, fmt.Errorf("error to read mongodb uri: %v", err.Error())
+			}
+
+			c.MongoDB[i].URI = string(mongodbURI)
+		}
+	}
+
+	if c.SMTP.Password != "" {
+		smtpPassword, err := encryption.Decrypt(c.SMTP.Password)
+		if err != nil {
+			return nil, fmt.Errorf("error to read smtp password: %v", err.Error())
+		}
+		c.SMTP.Password = string(smtpPassword)
+	}
+
+	if c.Midtrans.ServerKey != "" {
+		midtransServerKey, err := encryption.Decrypt(c.Midtrans.ServerKey)
+		if err != nil {
+			return nil, fmt.Errorf("error to read midtrans server key: %v", err.Error())
+		}
+		c.Midtrans.ServerKey = string(midtransServerKey)
+	}
+
+	if c.Midtrans.IrisKey != "" {
+		irisKey, err := encryption.Decrypt(c.Midtrans.IrisKey)
+		if err != nil {
+			return nil, fmt.Errorf("error to read midtrans iris key: %v", err.Error())
+		}
+		c.Midtrans.IrisKey = string(irisKey)
+	}
+
+	if c.Whatsapp.AuthToken != "" {
+		authToken, err := encryption.Decrypt(c.Whatsapp.AuthToken)
+		if err != nil {
+			return nil, fmt.Errorf("error to read whatsapp auth token: %v", err.Error())
+		}
+		c.Whatsapp.AuthToken = authToken
+	}
+
+	if c.Firebase.ServiceAccountKey != "" {
+		ServiceAccountKey, err := encryption.Decrypt(c.Firebase.ServiceAccountKey)
+		if err != nil {
+			return nil, fmt.Errorf("error to read whatsapp auth token: %v", err.Error())
+		}
+		c.Firebase.ServiceAccountKey = ServiceAccountKey
+	}
+
+	return c, nil
+}
+
+// get postgres user management marked instance
+func getUserManagementPGInstance(instances []contract.PGInstance, PGUM string) (*contract.PGInstance, error) {
+	for i := 0; i < len(instances); i++ {
+		if instances[i].Label == PGUM {
+			return &instances[i], nil
+		}
+	}
+
+	return nil, fmt.Errorf("user management pg instance named '%s' not found", PGUM)
 }
 
 func (h *Module) Middleware(userType string) (contract.Middleware, error) {

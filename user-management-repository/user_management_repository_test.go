@@ -15,7 +15,7 @@ import (
 var (
 	configuration = config.Configuration{
 		UserManagement: config.UserManagementConfig{
-			SelectedCredential: config.UserCredential{
+			SelectedCredential: config.User{
 				Type:                 "admin",
 				UserTable:            "admins",
 				Credential:           []string{"username", "email", "phone_numbers"},

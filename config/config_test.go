@@ -25,27 +25,36 @@ func TestReader(t *testing.T) {
 		app := c.Configuration.Application
 		assert.NotEmpty(t, app.Port)
 		assert.NotEmpty(t, app.Secret)
+		assert.NotEmpty(t, app.UserManagementPGInstance)
+		t.Logf("umpginstace : %s", app.UserManagementPGInstance)
 	})
 
 	t.Run("postgres", func(t *testing.T) {
 		postgres := c.Configuration.PostgreSQL
-		assert.NotEmpty(t, postgres.ConnectionMaxLifeTime)
-		assert.NotEmpty(t, postgres.DBName)
-		assert.NotEmpty(t, postgres.Host)
-		assert.NotEmpty(t, postgres.MaxIdleConnections)
-		assert.NotEmpty(t, postgres.MaxOpenConnections)
-		assert.NotEmpty(t, postgres.Password)
-		assert.NotEmpty(t, postgres.Port)
-		assert.NotEmpty(t, postgres.User)
+		for _, v := range postgres {
+			t.Logf("testing pg instance : %s", v.Label)
+			assert.NotEmpty(t, v.Label)
+			assert.NotEmpty(t, v.ConnectionMaxLifeTime)
+			assert.NotEmpty(t, v.DBName)
+			assert.NotEmpty(t, v.Host)
+			assert.NotEmpty(t, v.MaxIdleConnections)
+			assert.NotEmpty(t, v.MaxOpenConnections)
+			assert.NotEmpty(t, v.Password)
+			assert.NotEmpty(t, v.Port)
+			assert.NotEmpty(t, v.User)
+		}
 	})
 
 	t.Run("mongodb", func(t *testing.T) {
 		mongodb := c.Configuration.MongoDB
-		assert.NotEmpty(t, mongodb.DBName)
-		assert.NotEmpty(t, mongodb.MaxIdleConnections)
-		assert.NotEmpty(t, mongodb.MaxPool)
-		assert.NotEmpty(t, mongodb.MinPool)
-		assert.NotEmpty(t, mongodb.URI)
+		for _, v := range mongodb {
+			assert.NotEmpty(t, v.Label)
+			assert.NotEmpty(t, v.DBName)
+			assert.NotEmpty(t, v.MaxIdleConnections)
+			assert.NotEmpty(t, v.MaxPool)
+			assert.NotEmpty(t, v.MinPool)
+			assert.NotEmpty(t, v.URI)
+		}
 	})
 
 	t.Run("smtp", func(t *testing.T) {

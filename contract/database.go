@@ -6,8 +6,18 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type DatabaseContract interface {
-	MongoDB() (*mongo.Database, error)
+type PGInstance struct {
+	Label    string
+	Instance *sql.DB
+}
 
-	PosgresSQL() (*sql.DB, error)
+type MongoDBInstance struct {
+	Label    string
+	Instance *mongo.Database
+}
+
+type DatabaseContract interface {
+	MongoDB() ([]MongoDBInstance, error)
+
+	PosgresSQL() ([]PGInstance, error)
 }

@@ -9,7 +9,6 @@ import (
 
 type tableStructureCheckerRepositoryImplementation struct{ db *sql.DB }
 
-// StructureGetter implements contract.TableStructureCheckerRepository.
 func (i *tableStructureCheckerRepositoryImplementation) StructureGetter(tablename string) (columns []contract.Column, failure error) {
 	query := fmt.Sprintf(`SELECT column_name, data_type FROM INFORMATION_SCHEMA.COLUMNS where table_name = '%s'`, tablename)
 

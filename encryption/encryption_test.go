@@ -68,3 +68,22 @@ func TestDecrypt(t *testing.T) {
 		t.Logf("decrypted : %s", decrypted)
 	}
 }
+
+func TestDecryptPT2(t *testing.T) {
+	key := "first-man-of-war"
+	ciphers := []string{
+		"3mp3OVuLVCJkb6ZWQiEu04GpKBzsu+MpOW5+QCNxG8A+yCVlAg==",
+		"xT1fvQJEcZgFy6TLb1iaFlrkxYJxK8bbzubV",
+		"dx70Bg/LXzieAFuqyjAA4XIOtihSrEUg0cUbTLI=",
+	}
+
+	e, err := Encryption([]byte(key))
+	assert.NoError(t, err)
+
+	for _, v := range ciphers {
+		decrypted, err := e.Decrypt(v)
+		require.Nil(t, err)
+
+		t.Logf("decrypted : %s", decrypted)
+	}
+}

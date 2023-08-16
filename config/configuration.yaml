@@ -1,21 +1,49 @@
 application :
-  port : :8000
-  secret : 172y87f1
-postgres : 
-  host : localhost
-  port : 5432
-  user : testuser
-  password : testpass
-  db_name : testdb
-  max_open_connections : 1
-  max_idle_connections : 2
-  connection_max_life_time : 2
-mongodb : 
-  uri : localhost/bla-bla-bla
-  max_pool : 10
-  min_pool : 5
-  max_idle_connections : 2
-  db_name : testdb
+  port: :8000
+  secret: 172y87f1
+  user_management_pg_instance: user-management # which postgresql instance used for user management
+postgres : [
+  {
+    label: general,
+    host: localhost,
+    port: 5432,
+    user: testuser,
+    password: testpass,
+    db_name: testdb,
+    max_open_connections: 1,
+    max_idle_connections: 2,
+    connection_max_life_time: 2,
+  },
+  {
+    label: user-management,
+    host: localhost,
+    port: 5433,
+    user: infrast_um,
+    password: infrastumpass,
+    db_name: infrastdbum,
+    max_open_connections: 1,
+    max_idle_connections: 2,
+    connection_max_life_time: 2,
+  },
+]
+mongodb : [
+  {
+    label : "dummy1",
+    uri : localhost/bla-bla-bla,
+    max_pool : 10,
+    min_pool : 5,
+    max_idle_connections : 2,
+    db_name : testdb,
+  },
+  {
+    label : "dummy2",
+    uri : localhost/bla-bla-bla,
+    max_pool : 10,
+    min_pool : 5,
+    max_idle_connections : 2,
+    db_name : testdb,
+  },
+]
 smtp : 
   host : localhost
   password : testpass
@@ -113,6 +141,3 @@ user_management :
     timestamp_property : timestamp
     user_type_property : user_type
     user_id_property : user_id
-
-
-    

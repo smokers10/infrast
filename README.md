@@ -1,18 +1,18 @@
 # GO INFRAST!
-A simpler way to setup your golang project!
+A simpler way to setup infrastructure for your golang project!
 
 # Provided Module
 here the module we provided for your project :
-* Database (Postgre & Mongo)
-* Encryption
-* Identifier
+* Database (Postgre & Mongo) support multi instance
+* Encryption (AES & Bcrypt)
+* Identifier 
 * JSON Web Token
 * SMTP With Template Processor
-* Payment Gateway
-* Whatsapp
+* Payment Gateway (Midtrans)
+* Whatsapp (Twillio)
 * Firebase
-* User Management
-* Middleware
+* User Management (3-step-registration)
+* Middleware (Proccess only)
 
 # How To Use
 ## Step 1: Installation
@@ -26,21 +26,49 @@ here the example of configuration file you can follow :
 application :
   port: :8000
   secret: your-encrypted-secret
-postgres: 
-  host: localhost
-  port: 5432
-  user: testuser
-  password: your-encrypted-postgres-password
-  db_name: testdb
-  max_open_connections: 1
-  max_idle_connections: 2
-  connection_max_life_time: 2
-mongodb: 
-  uri: your-encrypted-mongo-uri
-  max_pool: 10
-  min_pool: 5
-  max_idle_connections: 2
-  db_name: testdb
+  user_management_pg_instance: user-management # which postgresql instance used for user management
+postgres : [
+  {
+    label: general,
+    host: localhost,
+    port: 5432,
+    user: testuser,
+    password: testpass,
+    db_name: testdb,
+    max_open_connections: 1,
+    max_idle_connections: 2,
+    connection_max_life_time: 2,
+  },
+  {
+    label: user-management,
+    host: localhost,
+    port: 5433,
+    user: infrast_um,
+    password: infrastumpass,
+    db_name: infrastdbum,
+    max_open_connections: 1,
+    max_idle_connections: 2,
+    connection_max_life_time: 2,
+  },
+]
+mongodb : [
+  {
+    label : "dummy1",
+    uri : localhost/bla-bla-bla,
+    max_pool : 10,
+    min_pool : 5,
+    max_idle_connections : 2,
+    db_name : testdb,
+  },
+  {
+    label : "dummy2",
+    uri : localhost/bla-bla-bla,
+    max_pool : 10,
+    min_pool : 5,
+    max_idle_connections : 2,
+    db_name : testdb,
+  },
+]
 smtp: 
   host: localhost
   password: your-encrypted-smtp-password
@@ -98,9 +126,8 @@ import (
 func main() {
     app := fiber.New()
     key := os.GetEnv("aes-key-env-name")
-    path := os.GetEnv("your-yaml-path")
 
-	infrast, err := infrast.Head(path, key)
+	infrast, err := infrast.Head("infrast_configuration.yaml", key)
 	if err != nil {
 		panic(err)
 	}
@@ -115,7 +142,7 @@ func main() {
 
 # User Management & Middleware
 ## Step 1: Configuration
-To use user management & middleware you should add more configuration to your YAML file, here the configuration: 
+To use user management & middleware you should add more configuration to your YAML file and make sure you mark which postgres instace used for user management, here the configuration: 
 ```
 user_management :
   message_template: 
