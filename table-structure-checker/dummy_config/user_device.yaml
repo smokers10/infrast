@@ -1,8 +1,0 @@
-user_management :
-  user_device : 
-    table_name : "user_devices"
-    id_property : "id"
-    device_id_property : "device_id"
-    user_id_property : "user_id"
-    user_type_property : "user_type"
-    email_template_path : "template/device-warning.html"

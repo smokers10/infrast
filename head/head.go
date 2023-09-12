@@ -1,10 +1,8 @@
 package head
 
 import (
-	"errors"
 	"fmt"
 
-	"github.com/common-nighthawk/go-figure"
 	"github.com/sirupsen/logrus"
 	"github.com/smokers10/infrast/config"
 	"github.com/smokers10/infrast/contract"
@@ -13,36 +11,26 @@ import (
 	"github.com/smokers10/infrast/firebase"
 	"github.com/smokers10/infrast/identifier"
 	"github.com/smokers10/infrast/jsonwebtoken"
-	"github.com/smokers10/infrast/lib"
 	"github.com/smokers10/infrast/mailer"
-	"github.com/smokers10/infrast/middleware"
 	"github.com/smokers10/infrast/midtrans"
-	tablestructurechecker "github.com/smokers10/infrast/table-structure-checker"
 	templateprocessor "github.com/smokers10/infrast/template-processor"
-	usermanagement "github.com/smokers10/infrast/user-management"
-	usermanagementrepository "github.com/smokers10/infrast/user-management-repository"
 	"github.com/smokers10/infrast/whatsapp"
 )
 
 type Module struct {
-	DB                       contract.DatabaseContract
-	Encryption               contract.EncryptionContract
-	Identfier                contract.IdentfierContract
-	JWT                      contract.JsonWebTokenContract
-	Mailer                   contract.MailerContract
-	TemplateProcessor        contract.TemplateProcessor
-	UserManagementRepository contract.UserManagementRepository
-	Midtrans                 contract.Midtrans
-	Whatsapp                 contract.Whatsapp
-	Firebase                 contract.Firebase
-	Configuration            *config.Configuration
+	DB                contract.DatabaseContract
+	Encryption        contract.EncryptionContract
+	Identfier         contract.IdentfierContract
+	JWT               contract.JsonWebTokenContract
+	Mailer            contract.MailerContract
+	TemplateProcessor contract.TemplateProcessor
+	Midtrans          contract.Midtrans
+	Whatsapp          contract.Whatsapp
+	Firebase          contract.Firebase
+	Configuration     *config.Configuration
 }
 
 func Head(path string, encryption_key string) (*Module, error) {
-	art := figure.NewColorFigure("INFRAST", "", "red", true)
-	art.Print()
-	fmt.Printf("CREATED BY: smokers10 \n\n")
-
 	// read configuration
 	ch, err := config.ConfigurationHead(path)
 	if err != nil {
@@ -104,55 +92,8 @@ func Head(path string, encryption_key string) (*Module, error) {
 		modules.Mailer = mailer
 	}
 
-	PGInstances, err := modules.DB.PosgresSQL()
-	if err != nil {
-		return nil, fmt.Errorf("error call postgre db : %v", err.Error())
-	}
-
-	UMInstance, err := getUserManagementInstance(PGInstances, c.Application.UserManagementInstance)
-	if err != nil {
-		return nil, err
-	}
-
-	USInstance, err := getUserStorageInstance(PGInstances, c.Application.UserStorageInstance)
-	if err != nil {
-		return nil, err
-	}
-
-	modules.UserManagementRepository = usermanagementrepository.UserManagementRepository(UMInstance.Instance, USInstance.Instance)
-	tableStructureChecker := tablestructurechecker.TableStructureCheckerRepository(UMInstance.Instance)
-	checker := tablestructurechecker.TableStructureChecker(tableStructureChecker)
-	checkResult, err := checker.StructureChecker(&c.UserManagement)
-	if err != nil {
-		return nil, err
-	}
-	if len(checkResult) != 0 {
-		lib.CheckResultLogFormat(checkResult)
-		return nil, errors.New("user management -> TSC error")
-	} else {
-		logrus.Info("user management -> TSC OK")
-	}
-
 	logrus.Info("Infrast OK!")
 	return &modules, nil
-}
-
-func (h *Module) Middleware(userType string) (contract.Middleware, error) {
-	m, err := middleware.Middleware(&h.Configuration.UserManagement, h.UserManagementRepository, h.JWT, userType)
-	if err != nil {
-		return nil, err
-	}
-
-	return m, nil
-}
-
-func (h *Module) UserManagement(userType string) (contract.UserManagement, error) {
-	UM, err := usermanagement.UserManagement(h.Configuration, h.UserManagementRepository, h.Identfier, h.Encryption, h.JWT, h.Mailer, h.Whatsapp, h.TemplateProcessor, userType)
-	if err != nil {
-		return nil, err
-	}
-
-	return UM, nil
 }
 
 func readEncryptedConfig(c *config.Configuration, encryption contract.EncryptionContract) (*config.Configuration, error) {
@@ -226,24 +167,4 @@ func readEncryptedConfig(c *config.Configuration, encryption contract.Encryption
 	}
 
 	return c, nil
-}
-
-func getUserManagementInstance(instances []contract.PGInstance, PGUM string) (*contract.PGInstance, error) {
-	for i := 0; i < len(instances); i++ {
-		if instances[i].Label == PGUM {
-			return &instances[i], nil
-		}
-	}
-
-	return nil, fmt.Errorf("pg instance for user management named '%s' not found", PGUM)
-}
-
-func getUserStorageInstance(instances []contract.PGInstance, PGS string) (*contract.PGInstance, error) {
-	for i := 0; i < len(instances); i++ {
-		if instances[i].Label == PGS {
-			return &instances[i], nil
-		}
-	}
-
-	return nil, fmt.Errorf("pg instance for user storage named '%s' not found", PGS)
 }

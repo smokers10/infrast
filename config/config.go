@@ -1,10 +1,8 @@
 package config
 
 import (
-	"errors"
 	"io"
 	"os"
-	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -44,45 +42,7 @@ func (ch *configurationHead) read(path string) (*Configuration, error) {
 		return nil, err
 	}
 
-	result.UserManagement.Users = ch.prepareUserCredential(result.UserManagement.Users)
-
 	ch.Configuration = &result
 
 	return &result, nil
-}
-
-func (ch *configurationHead) prepareUserCredential(userCredentials []User) (results []User) {
-	for _, v := range userCredentials {
-		UCTemp := User{
-			Type:                 strings.ToLower(v.Type),
-			UserTable:            strings.ToLower(v.UserTable),
-			IDProperty:           strings.ToLower(v.IDProperty),
-			PhotoProfileProperty: strings.ToLower(v.PhotoProfileProperty),
-			PasswordProperty:     strings.ToLower(v.PasswordProperty),
-			UsernameProperty:     strings.ToLower(v.UsernameProperty),
-			EmailProperty:        strings.ToLower(v.EmailProperty),
-			PhoneProperty:        strings.ToLower(v.PhoneProperty),
-		}
-
-		for _, q := range v.Credential {
-			UCTemp.Credential = append(UCTemp.Credential, strings.ToLower(q))
-		}
-
-		results = append(results, UCTemp)
-	}
-	return results
-}
-
-func (ch *configurationHead) RegisteredUserType() ([]string, error) {
-	userTypes := []string{}
-
-	if len(ch.Configuration.UserManagement.Users) == 0 {
-		return nil, errors.New("no user credential data! make sure your configuration YAML is following the prefered format or call the read method first")
-	}
-
-	for _, v := range ch.Configuration.UserManagement.Users {
-		userTypes = append(userTypes, v.Type)
-	}
-
-	return userTypes, nil
 }
