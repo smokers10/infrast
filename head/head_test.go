@@ -15,7 +15,6 @@ func TestHead(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, UM)
 	})
-
 	t.Run("check middleware", func(t *testing.T) {
 		middleware, err := head.Middleware("user")
 		assert.NoError(t, err)

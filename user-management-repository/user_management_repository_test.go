@@ -82,7 +82,7 @@ var (
 func TestDeleteUserDevice(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	repository := UserManagementRepository(db)
+	repository := UserManagementRepository(db, db)
 	conf := configuration.UserManagement.UserDevice
 	query := fmt.Sprintf("DELETE FROM %s WHERE %s = \\$1 AND %s = \\$2", pq.QuoteIdentifier(conf.TableName),
 		conf.UserIDProperty,
@@ -120,7 +120,7 @@ func TestDeleteUserDevice(t *testing.T) {
 func TestCreateCompleteLoginSession(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	repository := UserManagementRepository(db)
+	repository := UserManagementRepository(db, db)
 	conf := configuration.UserManagement.Login
 	query := fmt.Sprintf("INSERT INTO %s (.+) VALUES (.+)", pq.QuoteIdentifier(conf.TableName))
 	t.Logf("query on test : %v", query)
@@ -158,7 +158,7 @@ func TestCreateCompleteLoginSession(t *testing.T) {
 func TestGetUserCredentials(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	repository := UserManagementRepository(db)
+	repository := UserManagementRepository(db, db)
 	conf := configuration.UserManagement.SelectedCredential
 	query := fmt.Sprintf("SELECT %s as id, %s as email, %s as phone FROM %s WHERE %s = \\$1", conf.IDProperty, conf.EmailProperty, conf.PhoneProperty, pq.QuoteIdentifier(conf.UserTable), conf.IDProperty)
 	t.Logf("query on test : %v", query)
@@ -205,7 +205,7 @@ func TestGetUserCredentials(t *testing.T) {
 func TestUpdateJWTToken(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	repository := UserManagementRepository(db)
+	repository := UserManagementRepository(db, db)
 	loginConf := configuration.UserManagement.Login
 	query := fmt.Sprintf("UPDATE %s SET %s = \\$1 WHERE %s = \\$2", pq.QuoteIdentifier(loginConf.TableName), loginConf.TokenProperty, loginConf.DeviceIDProperty)
 	t.Logf("query on test : %v", query)
@@ -241,7 +241,7 @@ func TestUpdateJWTToken(t *testing.T) {
 func TestUpdateUserPasswordByUserID(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	repository := UserManagementRepository(db)
+	repository := UserManagementRepository(db, db)
 	credConf := configuration.UserManagement.SelectedCredential
 	query := fmt.Sprintf("UPDATE %s SET %s = \\$1 WHERE %s = \\$2", pq.QuoteIdentifier(credConf.UserTable), credConf.PasswordProperty, credConf.IDProperty)
 	t.Logf("query on test : %v", query)
@@ -277,7 +277,7 @@ func TestUpdateUserPasswordByUserID(t *testing.T) {
 func TestFindOneUserByID(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	repository := UserManagementRepository(db)
+	repository := UserManagementRepository(db, db)
 	credConf := configuration.UserManagement.SelectedCredential
 	query := fmt.Sprintf("SELECT %s as id, %s as email, %s as username, %s as phone, %s as photo_profile, %s as password FROM %s WHERE %s = \\$1", credConf.IDProperty,
 		credConf.EmailProperty, credConf.UsernameProperty, credConf.PhoneProperty, credConf.PhotoProfileProperty, credConf.PasswordProperty, pq.QuoteIdentifier(credConf.UserTable),
@@ -327,7 +327,7 @@ func TestFindOneUserByID(t *testing.T) {
 func TestUpdateCredential(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	repository := UserManagementRepository(db)
+	repository := UserManagementRepository(db, db)
 	credConf := configuration.UserManagement.SelectedCredential
 	credentialProperty := "email"
 	query := fmt.Sprintf("UPDATE %s SET %s = \\$1 WHERE %s = \\$2", pq.QuoteIdentifier(credConf.UserTable), credentialProperty, credConf.IDProperty)
@@ -364,7 +364,7 @@ func TestUpdateCredential(t *testing.T) {
 func TestGetFCMToken(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	repository := UserManagementRepository(db)
+	repository := UserManagementRepository(db, db)
 	conf := configuration.UserManagement.UserFCMToken
 	query := fmt.Sprintf("SELECT %s as id, %s as token, %s as timestamp, %s as user_type, %s as user_id FROM %s WHERE %s = \\$1", conf.IDProperty, conf.TokenProperty,
 		conf.TimestampProperty, conf.UserTypeProperty, conf.UserIDProperty, pq.QuoteIdentifier(conf.TableName), conf.UserIDProperty)
@@ -414,7 +414,7 @@ func TestGetFCMToken(t *testing.T) {
 func TestStoreFCMToken(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	repository := UserManagementRepository(db)
+	repository := UserManagementRepository(db, db)
 	conf := configuration.UserManagement.UserFCMToken
 	query := fmt.Sprintf("INSERT INTO %s (.+) VALUES (.+)", pq.QuoteIdentifier(conf.TableName))
 	t.Logf("query on test : %v", query)
@@ -453,7 +453,7 @@ func TestStoreFCMToken(t *testing.T) {
 func TestUpdateFCMToken(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	repository := UserManagementRepository(db)
+	repository := UserManagementRepository(db, db)
 	conf := configuration.UserManagement.UserFCMToken
 	query := fmt.Sprintf("UPDATE %s SET %s = \\$1, %s = \\$2 WHERE %s = \\$3", pq.QuoteIdentifier(conf.TableName), conf.TokenProperty, conf.TimestampProperty, conf.UserIDProperty)
 	t.Logf("query on test : %v", query)
@@ -491,7 +491,7 @@ func TestUpdateFCMToken(t *testing.T) {
 func TestCompleteLogin(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	repository := UserManagementRepository(db)
+	repository := UserManagementRepository(db, db)
 	query := fmt.Sprintf("UPDATE %s SET %s = \\$1, %s = \\$2 WHERE %s = \\$3", pq.QuoteIdentifier(configuration.UserManagement.Login.TableName),
 		configuration.UserManagement.Login.TokenProperty, configuration.UserManagement.Login.LoginAtProperty, configuration.UserManagement.Login.DeviceIDProperty)
 	t.Logf("query on test : %v", query)
@@ -526,7 +526,7 @@ func TestCreateNewLogginSession(t *testing.T) {
 	umc := configuration.UserManagement
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	repository := UserManagementRepository(db)
+	repository := UserManagementRepository(db, db)
 	query := fmt.Sprintf("INSERT INTO %s (.+) VALUES (.+)", pq.QuoteIdentifier(umc.Login.TableName))
 	t.Logf("query on test : %v", query)
 
@@ -560,7 +560,7 @@ func TestCreateNewUserDevice(t *testing.T) {
 	umc := configuration.UserManagement
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	repository := UserManagementRepository(db)
+	repository := UserManagementRepository(db, db)
 	userID := 1
 	deviceID := "device-id"
 	query := fmt.Sprintf("INSERT INTO %s (.+) VALUES (.+)", pq.QuoteIdentifier(umc.UserDevice.TableName))
@@ -596,7 +596,7 @@ func TestCreateRegistration(t *testing.T) {
 	umc := configuration.UserManagement
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	repository := UserManagementRepository(db)
+	repository := UserManagementRepository(db, db)
 	token := "token"
 	credential := "credential"
 	otp := "otp"
@@ -635,7 +635,7 @@ func TestDeleteForgotPassword(t *testing.T) {
 	umc := configuration.UserManagement
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	repository := UserManagementRepository(db)
+	repository := UserManagementRepository(db, db)
 	token := "token"
 	query := fmt.Sprintf("DELETE FROM %v WHERE %s = \\$1 AND %s = \\$2", pq.QuoteIdentifier(umc.ResetPassword.TableName), umc.ResetPassword.TokenProperty, umc.ResetPassword.UserTypeProperty)
 	t.Logf("query on test : %v", query)
@@ -670,7 +670,7 @@ func TestDeleteLoginSession(t *testing.T) {
 	umc := configuration.UserManagement
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	repository := UserManagementRepository(db)
+	repository := UserManagementRepository(db, db)
 	deviceID := "device-id"
 	userType := umc.SelectedCredential.Type
 	query := fmt.Sprintf("DELETE FROM %s WHERE %s = \\$1 AND %s = \\$2", pq.QuoteIdentifier(umc.Login.TableName), umc.Login.DeviceIDProperty, umc.Login.TypeProperty)
@@ -706,7 +706,7 @@ func TestFindOneForgotPassword(t *testing.T) {
 	umc := configuration.UserManagement
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	repository := UserManagementRepository(db)
+	repository := UserManagementRepository(db, db)
 	token := "token"
 	userType := umc.SelectedCredential.Type
 	query := fmt.Sprintf("SELECT %s as id, %s as token, %s as otp, %s as credential, %s as created_at FROM %s WHERE %s = \\$1 AND %s = \\$2 LIMIT 1", umc.ResetPassword.IDProperty, umc.ResetPassword.TokenProperty,
@@ -766,7 +766,7 @@ func TestFindoneLoginSession(t *testing.T) {
 	umc := configuration.UserManagement
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	repository := UserManagementRepository(db)
+	repository := UserManagementRepository(db, db)
 	deviceID := "device_id"
 	userType := umc.SelectedCredential.Type
 	query := fmt.Sprintf("SELECT %s as id, %s as token, %s as credential, %s as type, %s as login_at, %s as attempt_at, %s as failed_counter FROM %s WHERE %s = \\$1 AND %s = \\$2 LIMIT 1",
@@ -826,7 +826,7 @@ func TestFindOneRegistration(t *testing.T) {
 	umc := configuration.UserManagement
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	repository := UserManagementRepository(db)
+	repository := UserManagementRepository(db, db)
 	token := "token"
 	userType := umc.SelectedCredential.Type
 	query := fmt.Sprintf("SELECT %s as id, %s as token, %s as otp, %s as credential, %s as created_at, %s as type, %s as registration_status, %s as device_id, %s as fcm_token FROM %s WHERE %s = \\$1 AND %s = \\$2 LIMIT 1",
@@ -899,7 +899,7 @@ func TestFindOneRegistrationByCredential(t *testing.T) {
 	umc := configuration.UserManagement
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	repository := UserManagementRepository(db)
+	repository := UserManagementRepository(db, db)
 	credential := "user@gmail.com"
 	userType := umc.SelectedCredential.Type
 	query := fmt.Sprintf("SELECT %s as id, %s as token, %s as otp, %s as credential, %s as created_at, %s as type, %s as registration_status, %s as device_id FROM %s WHERE %s = \\$1 AND %s = \\$2 LIMIT 1",
@@ -963,7 +963,7 @@ func TestFindOneUser(t *testing.T) {
 	umc := configuration.UserManagement
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	repository := UserManagementRepository(db)
+	repository := UserManagementRepository(db, db)
 	credential := "user@gmail.com"
 	selectedCred := umc.SelectedCredential
 	tableName := selectedCred.UserTable
@@ -1028,7 +1028,7 @@ func TestFindUserDevice(t *testing.T) {
 	umc := configuration.UserManagement
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	repository := UserManagementRepository(db)
+	repository := UserManagementRepository(db, db)
 	userID := 1
 	deviceID := "device-123"
 
@@ -1088,7 +1088,7 @@ func TestStoreForgotPassword(t *testing.T) {
 	umc := configuration.UserManagement
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	repository := UserManagementRepository(db)
+	repository := UserManagementRepository(db, db)
 	credential := "user@gmail.com"
 	token := "token123"
 	otp := "123456"
@@ -1125,7 +1125,7 @@ func TestStoreUser(t *testing.T) {
 	umc := configuration.UserManagement
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	repository := UserManagementRepository(db)
+	repository := UserManagementRepository(db, db)
 	column := "(email, username, password)"
 	args := []string{"user@example.com", "user123", "password123"}
 
@@ -1175,7 +1175,7 @@ func TestUpdateLoginCredential(t *testing.T) {
 	umc := configuration.UserManagement
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	repository := UserManagementRepository(db)
+	repository := UserManagementRepository(db, db)
 	deviceID := "device-id"
 	credential := "new-credential"
 
@@ -1214,7 +1214,7 @@ func TestUpdateLoginFailedAttempt(t *testing.T) {
 	umc := configuration.UserManagement
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	repository := UserManagementRepository(db)
+	repository := UserManagementRepository(db, db)
 	deviceID := "device-id"
 	newNumber := 5
 
@@ -1252,7 +1252,7 @@ func TestUpdateStatusRegistration(t *testing.T) {
 	umc := configuration.UserManagement
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	repository := UserManagementRepository(db)
+	repository := UserManagementRepository(db, db)
 	token := "registration-token"
 
 	query := fmt.Sprintf("UPDATE %s SET %s = \\$1 WHERE %s = \\$2", pq.QuoteIdentifier(umc.Registration.TableName), umc.Registration.RegistrationStatusProperty, umc.Registration.TokenProperty)
@@ -1289,7 +1289,7 @@ func TestUpdateUserPassword(t *testing.T) {
 	umc := configuration.UserManagement
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	repository := UserManagementRepository(db)
+	repository := UserManagementRepository(db, db)
 	credential := "example@domain.com"
 	safePassword := "safepassword"
 
@@ -1331,7 +1331,7 @@ func TestUpdateRegistration(t *testing.T) {
 	umc := configuration.UserManagement.Registration
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	repository := UserManagementRepository(db)
+	repository := UserManagementRepository(db, db)
 
 	token := "token"
 	credential := "credential"

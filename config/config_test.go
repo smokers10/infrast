@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -25,14 +24,14 @@ func TestReader(t *testing.T) {
 		app := c.Configuration.Application
 		assert.NotEmpty(t, app.Port)
 		assert.NotEmpty(t, app.Secret)
-		assert.NotEmpty(t, app.UserManagementPGInstance)
-		t.Logf("umpginstace : %s", app.UserManagementPGInstance)
+		assert.NotEmpty(t, app.UserManagementInstance)
+		assert.NotEmpty(t, app.UserStorageInstance)
+		t.Logf("umpginstace : %s", app.UserManagementInstance)
 	})
 
 	t.Run("postgres", func(t *testing.T) {
 		postgres := c.Configuration.PostgreSQL
 		for _, v := range postgres {
-			t.Logf("testing pg instance : %s", v.Label)
 			assert.NotEmpty(t, v.Label)
 			assert.NotEmpty(t, v.ConnectionMaxLifeTime)
 			assert.NotEmpty(t, v.DBName)
@@ -173,12 +172,6 @@ func TestReader(t *testing.T) {
 			assert.NotEmpty(t, c.NewRegistrationEmailTemplatePath)
 			assert.NotEmpty(t, c.NewRegistrationMessageTemplate)
 			assert.NotEmpty(t, c.LoginCancelationURL)
-			t.Logf("new registration email path : %v", c.NewRegistrationEmailTemplatePath)
-			t.Logf("new device email path : %v", c.NewDeviceWarningEmailTemplatePath)
-			t.Logf("forgot password email path: %v", c.ForgotPasswordEmailTemplatePath)
-			t.Logf("new registration template message : %v", fmt.Sprintf(c.NewRegistrationMessageTemplate, "ABC123"))
-			t.Logf("new device template message : %v", fmt.Sprintf(c.NewDeviceWarningMessageTemplate, "https://yousecureweb.com/cancel-login/<user-id>/<device-id>"))
-			t.Logf("forgot password message : %v", fmt.Sprintf(c.ForgotPasswordMessageTemplate, "ABC456"))
 		})
 	})
 }

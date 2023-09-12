@@ -7,9 +7,12 @@ import (
 	"github.com/smokers10/infrast/contract"
 )
 
-type tableStructureCheckerRepositoryImplementation struct{ db *sql.DB }
+type tableStructureCheckerRepository struct {
+	db          *sql.DB
+	userStorage *sql.DB
+}
 
-func (i *tableStructureCheckerRepositoryImplementation) StructureGetter(tablename string) (columns []contract.Column, failure error) {
+func (i *tableStructureCheckerRepository) StructureGetter(tablename string, is_user_storage bool) (columns []contract.Column, failure error) {
 	query := fmt.Sprintf(`SELECT column_name, data_type FROM INFORMATION_SCHEMA.COLUMNS where table_name = '%s'`, tablename)
 
 	stmt, err := i.db.Prepare(query)
@@ -37,5 +40,5 @@ func (i *tableStructureCheckerRepositoryImplementation) StructureGetter(tablenam
 }
 
 func TableStructureCheckerRepository(db *sql.DB) contract.TableStructureCheckerRepository {
-	return &tableStructureCheckerRepositoryImplementation{db: db}
+	return &tableStructureCheckerRepository{db: db}
 }

@@ -16,7 +16,8 @@ const (
 )
 
 type userManagementRepositoryImplementation struct {
-	db *sql.DB
+	db          *sql.DB
+	userStorage *sql.DB
 }
 
 func (i *userManagementRepositoryImplementation) DeleteUserDevice(umc *config.UserManagementConfig, user_id int, device_id string) error {
@@ -67,7 +68,7 @@ func (i *userManagementRepositoryImplementation) GetUserCredentials(umc *config.
 	result := contract.UserModel{}
 	conf := umc.SelectedCredential
 	query := fmt.Sprintf("SELECT %s as id, %s as email, %s as phone FROM %s WHERE %s = $1", conf.IDProperty, conf.EmailProperty, conf.PhoneProperty, pq.QuoteIdentifier(conf.UserTable), conf.IDProperty)
-	stmt, err := i.db.Prepare(query)
+	stmt, err := i.userStorage.Prepare(query)
 	if err != nil {
 		return &contract.UserModel{}, err
 	}
@@ -107,7 +108,7 @@ func (i *userManagementRepositoryImplementation) UpdateUserPasswordByUserID(umc 
 	// UPDATE <user table name> SET password = $1 WHERE id = $2
 	credConf := umc.SelectedCredential
 	query := fmt.Sprintf("UPDATE %s SET %s = $1 WHERE %s = $2", pq.QuoteIdentifier(credConf.UserTable), credConf.PasswordProperty, credConf.IDProperty)
-	stmt, err := i.db.Prepare(query)
+	stmt, err := i.userStorage.Prepare(query)
 	if err != nil {
 		return err
 	}
@@ -128,7 +129,7 @@ func (i *userManagementRepositoryImplementation) FindOneUserByID(umc *config.Use
 	query := fmt.Sprintf("SELECT %s as id, %s as email, %s as username, %s as phone, %s as photo_profile, %s as password FROM %s WHERE %s = $1", credConf.IDProperty,
 		credConf.EmailProperty, credConf.UsernameProperty, credConf.PhoneProperty, credConf.PhotoProfileProperty, credConf.PasswordProperty, pq.QuoteIdentifier(credConf.UserTable),
 		credConf.IDProperty)
-	stmt, err := i.db.Prepare(query)
+	stmt, err := i.userStorage.Prepare(query)
 	if err != nil {
 		return &contract.UserModel{}, err
 	}
@@ -150,7 +151,7 @@ func (i *userManagementRepositoryImplementation) UpdateCredential(umc *config.Us
 	// UPDATE <user table name> SET <credential property> = $1 WHERE user_id = $2
 	credConf := umc.SelectedCredential
 	query := fmt.Sprintf("UPDATE %s SET %s = $1 WHERE %s = $2", pq.QuoteIdentifier(credConf.UserTable), credential_property, credConf.IDProperty)
-	stmt, err := i.db.Prepare(query)
+	stmt, err := i.userStorage.Prepare(query)
 	if err != nil {
 		return err
 	}
@@ -493,7 +494,7 @@ func (i *userManagementRepositoryImplementation) FindOneUser(umc *config.UserMan
 	query := fmt.Sprintf("SELECT DISTINCT %s as id, %s as email, %s as phone , %s as photo_profile, %s as password FROM %s WHERE %s LIMIT 1", selectedCred.IDProperty,
 		selectedCred.EmailProperty, selectedCred.PhoneProperty, selectedCred.PhotoProfileProperty, selectedCred.PasswordProperty, pq.QuoteIdentifier(tableName), whereClause)
 
-	stmt, err := i.db.Prepare(query)
+	stmt, err := i.userStorage.Prepare(query)
 	if err != nil {
 		return &result, err
 	}
@@ -560,7 +561,7 @@ func (i *userManagementRepositoryImplementation) StoreUser(umc *config.UserManag
 	value := lib.InsertQueryValueMaker(args...)
 	// INSERT INTO <table name> <column> VALUES <values>
 	query := fmt.Sprintf("INSERT INTO %s %s VALUES %s", pq.QuoteIdentifier(umc.SelectedCredential.UserTable), column, value)
-	stmt, err := i.db.Prepare(query)
+	stmt, err := i.userStorage.Prepare(query)
 	if err != nil {
 		return 0, err
 	}
@@ -638,7 +639,7 @@ func (i *userManagementRepositoryImplementation) UpdateUserPassword(umc *config.
 
 	// UPDATE <table name> SET password = $1 WHERE (credential = $1 OR ...n)
 	query := fmt.Sprintf("UPDATE %s SET %s = $1 WHERE %s", pq.QuoteIdentifier(tableName), umc.SelectedCredential.PasswordProperty, whereClause)
-	stmt, err := i.db.Prepare(query)
+	stmt, err := i.userStorage.Prepare(query)
 	if err != nil {
 		return err
 	}
@@ -652,6 +653,9 @@ func (i *userManagementRepositoryImplementation) UpdateUserPassword(umc *config.
 	return nil
 }
 
-func UserManagementRepository(db *sql.DB) contract.UserManagementRepository {
-	return &userManagementRepositoryImplementation{db: db}
+func UserManagementRepository(db *sql.DB, userStorage *sql.DB) contract.UserManagementRepository {
+	return &userManagementRepositoryImplementation{
+		db:          db,
+		userStorage: userStorage,
+	}
 }

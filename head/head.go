@@ -109,12 +109,17 @@ func Head(path string, encryption_key string) (*Module, error) {
 		return nil, fmt.Errorf("error call postgre db : %v", err.Error())
 	}
 
-	UMInstance, err := getUserManagementPGInstance(PGInstances, c.Application.UserManagementPGInstance)
+	UMInstance, err := getUserManagementInstance(PGInstances, c.Application.UserManagementInstance)
 	if err != nil {
 		return nil, err
 	}
 
-	modules.UserManagementRepository = usermanagementrepository.UserManagementRepository(UMInstance.Instance)
+	USInstance, err := getUserStorageInstance(PGInstances, c.Application.UserStorageInstance)
+	if err != nil {
+		return nil, err
+	}
+
+	modules.UserManagementRepository = usermanagementrepository.UserManagementRepository(UMInstance.Instance, USInstance.Instance)
 	tableStructureChecker := tablestructurechecker.TableStructureCheckerRepository(UMInstance.Instance)
 	checker := tablestructurechecker.TableStructureChecker(tableStructureChecker)
 	checkResult, err := checker.StructureChecker(&c.UserManagement)
@@ -132,7 +137,24 @@ func Head(path string, encryption_key string) (*Module, error) {
 	return &modules, nil
 }
 
-// read encrypted config value
+func (h *Module) Middleware(userType string) (contract.Middleware, error) {
+	m, err := middleware.Middleware(&h.Configuration.UserManagement, h.UserManagementRepository, h.JWT, userType)
+	if err != nil {
+		return nil, err
+	}
+
+	return m, nil
+}
+
+func (h *Module) UserManagement(userType string) (contract.UserManagement, error) {
+	UM, err := usermanagement.UserManagement(h.Configuration, h.UserManagementRepository, h.Identfier, h.Encryption, h.JWT, h.Mailer, h.Whatsapp, h.TemplateProcessor, userType)
+	if err != nil {
+		return nil, err
+	}
+
+	return UM, nil
+}
+
 func readEncryptedConfig(c *config.Configuration, encryption contract.EncryptionContract) (*config.Configuration, error) {
 	if c.Application.Secret != "" {
 		secret, err := encryption.Decrypt(c.Application.Secret)
@@ -206,31 +228,22 @@ func readEncryptedConfig(c *config.Configuration, encryption contract.Encryption
 	return c, nil
 }
 
-// get postgres user management marked instance
-func getUserManagementPGInstance(instances []contract.PGInstance, PGUM string) (*contract.PGInstance, error) {
+func getUserManagementInstance(instances []contract.PGInstance, PGUM string) (*contract.PGInstance, error) {
 	for i := 0; i < len(instances); i++ {
 		if instances[i].Label == PGUM {
 			return &instances[i], nil
 		}
 	}
 
-	return nil, fmt.Errorf("user management pg instance named '%s' not found", PGUM)
+	return nil, fmt.Errorf("pg instance for user management named '%s' not found", PGUM)
 }
 
-func (h *Module) Middleware(userType string) (contract.Middleware, error) {
-	m, err := middleware.Middleware(&h.Configuration.UserManagement, h.UserManagementRepository, h.JWT, userType)
-	if err != nil {
-		return nil, err
+func getUserStorageInstance(instances []contract.PGInstance, PGS string) (*contract.PGInstance, error) {
+	for i := 0; i < len(instances); i++ {
+		if instances[i].Label == PGS {
+			return &instances[i], nil
+		}
 	}
 
-	return m, nil
-}
-
-func (h *Module) UserManagement(userType string) (contract.UserManagement, error) {
-	UM, err := usermanagement.UserManagement(h.Configuration, h.UserManagementRepository, h.Identfier, h.Encryption, h.JWT, h.Mailer, h.Whatsapp, h.TemplateProcessor, userType)
-	if err != nil {
-		return nil, err
-	}
-
-	return UM, nil
+	return nil, fmt.Errorf("pg instance for user storage named '%s' not found", PGS)
 }

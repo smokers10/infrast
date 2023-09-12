@@ -14,12 +14,14 @@ type tableStructureCheckerImplementation struct {
 // StructureChecker implements contract.TableStructureChecker.
 func (i *tableStructureCheckerImplementation) StructureChecker(umc *config.UserManagementConfig) (result []contract.CheckResult, failure error) {
 	tables := tableToCheck(umc)
+	userTables := userStorageTableToCheck(umc)
 
+	// user management TSC
 	for _, tableName := range tables {
 		dump := contract.CheckResult{}
 		dump.TableName = tableName
 
-		column, err := i.CheckerRepository.StructureGetter(tableName)
+		column, err := i.CheckerRepository.StructureGetter(tableName, false)
 		if err != nil {
 			return nil, fmt.Errorf("error on accessing table %s with error %v", tableName, err.Error())
 		}
@@ -45,15 +47,6 @@ func (i *tableStructureCheckerImplementation) StructureChecker(umc *config.UserM
 			}
 		}
 
-		for idx, v := range umc.Users {
-			if v.UserTable == tableName {
-				userCredentialCheck := userCredentailCheck(column, &umc.Users[idx])
-				if len(userCredentialCheck) != 0 {
-					dump.Mismatch = append(dump.Mismatch, userCredentialCheck...)
-				}
-			}
-		}
-
 		if tableName == umc.UserDevice.TableName {
 			userDeviceCheck := userDeviceCheck(column, &umc.UserDevice)
 			if len(userDeviceCheck) != 0 {
@@ -65,6 +58,31 @@ func (i *tableStructureCheckerImplementation) StructureChecker(umc *config.UserM
 			userFCMCheck := userFCMCheck(column, &umc.UserFCMToken)
 			if len(userFCMCheck) != 0 {
 				dump.Mismatch = append(dump.Mismatch, userFCMCheck...)
+			}
+		}
+
+		if len(dump.Mismatch) != 0 {
+			result = append(result, dump)
+			dump = contract.CheckResult{}
+		}
+	}
+
+	// user storage TSC
+	for _, userTable := range userTables {
+		dump := contract.CheckResult{}
+		dump.TableName = userTable
+
+		column, err := i.CheckerRepository.StructureGetter(userTable, true)
+		if err != nil {
+			return nil, fmt.Errorf("error on accessing user storage %s with error %v", userTable, err.Error())
+		}
+
+		for idx, v := range umc.Users {
+			if v.UserTable == userTable {
+				userCredentialCheck := userCredentailCheck(column, &umc.Users[idx])
+				if len(userCredentialCheck) != 0 {
+					dump.Mismatch = append(dump.Mismatch, userCredentialCheck...)
+				}
 			}
 		}
 
@@ -100,6 +118,12 @@ func tableToCheck(umc *config.UserManagementConfig) []string {
 	if umc.UserFCMToken.TableName != "" {
 		tableToCheck = append(tableToCheck, umc.UserFCMToken.TableName)
 	}
+
+	return tableToCheck
+}
+
+func userStorageTableToCheck(umc *config.UserManagementConfig) []string {
+	tableToCheck := []string{}
 
 	if len(umc.Users) != 0 {
 		for _, v := range umc.Users {

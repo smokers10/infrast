@@ -1,7 +1,8 @@
 application :
   port: :8000
   secret: 172y87f1
-  user_management_pg_instance: user-management # which postgresql instance used for user management
+  user_management_instance: user-management # which postgresql instance used for user management
+  user_storage_instance: general # which postgresql instance used for storing your user
 postgres : [
   {
     label: general,

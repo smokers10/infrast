@@ -21,7 +21,7 @@ func TestLoginStructureChecker(t *testing.T) {
 				Field: "mismatch",
 			},
 		}
-		mockRepository.Mock.On("StructureGetter", mock.Anything).Return(columnsMatch, nil).Once()
+		mockRepository.Mock.On("StructureGetter", mock.Anything, false).Return(columnsMatch, nil).Once()
 
 		result, err := checker.StructureChecker(&ch.Configuration.UserManagement)
 		assert.NoError(t, err)
@@ -52,7 +52,7 @@ func TestLoginStructureChecker(t *testing.T) {
 				Field: "attempt_at",
 			},
 		}
-		mockRepository.Mock.On("StructureGetter", mock.Anything).Return(columnsMatch, nil).Once()
+		mockRepository.Mock.On("StructureGetter", mock.Anything, false).Return(columnsMatch, nil).Once()
 
 		result, err := checker.StructureChecker(&ch.Configuration.UserManagement)
 		assert.NoError(t, err)
@@ -72,7 +72,7 @@ func TestRegistrationStructureChecker(t *testing.T) {
 				Field: "mismatch",
 			},
 		}
-		mockRepository.Mock.On("StructureGetter", mock.Anything).Return(columnsMatch, nil).Once()
+		mockRepository.Mock.On("StructureGetter", mock.Anything, false).Return(columnsMatch, nil).Once()
 
 		result, err := checker.StructureChecker(&ch.Configuration.UserManagement)
 		assert.NoError(t, err)
@@ -90,7 +90,7 @@ func TestRegistrationStructureChecker(t *testing.T) {
 			{Field: "created_at"},
 			{Field: "user_type"},
 		}
-		mockRepository.Mock.On("StructureGetter", mock.Anything).Return(columnsMatch, nil).Once()
+		mockRepository.Mock.On("StructureGetter", mock.Anything, false).Return(columnsMatch, nil).Once()
 
 		result, err := checker.StructureChecker(&ch.Configuration.UserManagement)
 		assert.NoError(t, err)
@@ -110,7 +110,7 @@ func TestResetPasswordStructureChecker(t *testing.T) {
 				Field: "mismatch",
 			},
 		}
-		mockRepository.Mock.On("StructureGetter", mock.Anything).Return(columnsMatch, nil).Once()
+		mockRepository.Mock.On("StructureGetter", mock.Anything, false).Return(columnsMatch, nil).Once()
 
 		result, err := checker.StructureChecker(&ch.Configuration.UserManagement)
 		assert.NoError(t, err)
@@ -126,7 +126,7 @@ func TestResetPasswordStructureChecker(t *testing.T) {
 			{Field: "created_at"},
 			{Field: "user_type"},
 		}
-		mockRepository.Mock.On("StructureGetter", mock.Anything).Return(columnsMatch, nil).Once()
+		mockRepository.Mock.On("StructureGetter", mock.Anything, false).Return(columnsMatch, nil).Once()
 
 		result, err := checker.StructureChecker(&ch.Configuration.UserManagement)
 		assert.NoError(t, err)
@@ -146,7 +146,7 @@ func TestUserCredentialStructureChecker(t *testing.T) {
 				Field: "mismatch",
 			},
 		}
-		mockRepository.Mock.On("StructureGetter", mock.Anything).Return(columnsMatch, nil).Once()
+		mockRepository.Mock.On("StructureGetter", mock.Anything, true).Return(columnsMatch, nil).Once()
 
 		result, err := checker.StructureChecker(&configuration.Configuration.UserManagement)
 		assert.NoError(t, err)
@@ -162,7 +162,7 @@ func TestUserCredentialStructureChecker(t *testing.T) {
 			{Field: "email"},
 			{Field: "phone"},
 		}
-		mockRepository.Mock.On("StructureGetter", mock.Anything).Return(columnsMatch, nil).Once()
+		mockRepository.Mock.On("StructureGetter", mock.Anything, true).Return(columnsMatch, nil).Once()
 
 		result, err := checker.StructureChecker(&configuration.Configuration.UserManagement)
 		assert.NoError(t, err)
@@ -182,7 +182,7 @@ func TestUserFCMTokenStructureChecker(t *testing.T) {
 				Field: "mismatch",
 			},
 		}
-		mockRepository.Mock.On("StructureGetter", mock.Anything).Return(columnsMatch, nil).Once()
+		mockRepository.Mock.On("StructureGetter", mock.Anything, false).Return(columnsMatch, nil).Once()
 
 		result, err := checker.StructureChecker(&configuration.Configuration.UserManagement)
 		assert.NoError(t, err)
@@ -197,7 +197,7 @@ func TestUserFCMTokenStructureChecker(t *testing.T) {
 			{Field: "user_type"},
 			{Field: "user_id"},
 		}
-		mockRepository.Mock.On("StructureGetter", mock.Anything).Return(columnsMatch, nil).Once()
+		mockRepository.Mock.On("StructureGetter", mock.Anything, false).Return(columnsMatch, nil).Once()
 
 		result, err := checker.StructureChecker(&configuration.Configuration.UserManagement)
 		assert.NoError(t, err)
@@ -217,7 +217,7 @@ func TestUserDeviceChecker(t *testing.T) {
 				Field: "mismatch",
 			},
 		}
-		mockRepository.Mock.On("StructureGetter", mock.Anything).Return(columnsMatch, nil).Once()
+		mockRepository.Mock.On("StructureGetter", mock.Anything, false).Return(columnsMatch, nil).Once()
 
 		result, err := checker.StructureChecker(&ch.Configuration.UserManagement)
 		assert.NoError(t, err)
@@ -231,7 +231,7 @@ func TestUserDeviceChecker(t *testing.T) {
 			{Field: "user_id"},
 			{Field: "user_type"},
 		}
-		mockRepository.Mock.On("StructureGetter", mock.Anything).Return(columnsMatch, nil).Once()
+		mockRepository.Mock.On("StructureGetter", mock.Anything, false).Return(columnsMatch, nil).Once()
 
 		result, err := checker.StructureChecker(&ch.Configuration.UserManagement)
 		assert.NoError(t, err)

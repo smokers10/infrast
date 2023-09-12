@@ -19,7 +19,7 @@ func TestStructureGetter(t *testing.T) {
 	t.Run("error on prepare", func(t *testing.T) {
 		mock.ExpectPrepare(query).WillReturnError(fmt.Errorf("error prepare"))
 
-		_, err := repository.StructureGetter("mytable")
+		_, err := repository.StructureGetter("mytable", false)
 		assert.Error(t, err)
 		t.Logf("error : %v", err.Error())
 	})
@@ -28,7 +28,7 @@ func TestStructureGetter(t *testing.T) {
 		mock.ExpectPrepare(query)
 		mock.ExpectQuery(query).WillReturnError(fmt.Errorf("error query"))
 
-		_, err := repository.StructureGetter("mytable")
+		_, err := repository.StructureGetter("mytable", false)
 		assert.Error(t, err)
 		t.Logf("error : %v", err.Error())
 	})
@@ -42,7 +42,7 @@ func TestStructureGetter(t *testing.T) {
 			AddRow("created_at", "datetime")
 		mock.ExpectQuery(query).WillReturnRows(rows)
 
-		columns, err := repository.StructureGetter("mytable")
+		columns, err := repository.StructureGetter("mytable", false)
 		assert.NoError(t, err)
 
 		expectedColumns := []contract.Column{

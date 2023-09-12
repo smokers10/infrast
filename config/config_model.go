@@ -1,9 +1,10 @@
 package config
 
 type Application struct {
-	Port                     string `yaml:"port"`
-	Secret                   string `yaml:"secret"`
-	UserManagementPGInstance string `yaml:"user_management_pg_instance"`
+	Port                   string `yaml:"port"`
+	Secret                 string `yaml:"secret"`
+	UserManagementInstance string `yaml:"user_management_instance"`
+	UserStorageInstance    string `yaml:"user_storage_instance"`
 }
 
 type PostgresConfig struct {
