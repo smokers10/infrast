@@ -19,5 +19,9 @@ type MongoDBInstance struct {
 type DatabaseContract interface {
 	MongoDB() ([]MongoDBInstance, error)
 
-	PosgresSQL() ([]PGInstance, error)
+	PostgresSQL() ([]PGInstance, error)
+
+	GetPosgresInstance(instances []PGInstance, label string) (*PGInstance, error)
+
+	GetMongoInstance(instances []MongoDBInstance, label string) (*MongoDBInstance, error)
 }

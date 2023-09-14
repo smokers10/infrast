@@ -17,6 +17,30 @@ type databaseImplementation struct {
 	Config *config.Configuration
 }
 
+// GetMongoInstance implements contract.DatabaseContract.
+func (*databaseImplementation) GetMongoInstance(instances []contract.MongoDBInstance, label string) (*contract.MongoDBInstance, error) {
+	for i := 0; i < len(instances); i++ {
+		instance := instances[i]
+		if instance.Label == label {
+			return &instance, nil
+		}
+	}
+
+	return nil, fmt.Errorf("mongo db instance labeled %s not found", label)
+}
+
+// GetPosgresInstance implements contract.DatabaseContract.
+func (*databaseImplementation) GetPosgresInstance(instances []contract.PGInstance, label string) (*contract.PGInstance, error) {
+	for i := 0; i < len(instances); i++ {
+		instance := instances[i]
+		if instance.Label == label {
+			return &instance, nil
+		}
+	}
+
+	return nil, fmt.Errorf("postgres instance labeled %s not found", label)
+}
+
 // MongoDB implements contract.DatabaseContract
 func (i *databaseImplementation) MongoDB() ([]contract.MongoDBInstance, error) {
 	c := i.Config.MongoDB
@@ -51,12 +75,11 @@ func (i *databaseImplementation) MongoDB() ([]contract.MongoDBInstance, error) {
 		instances = append(instances, instance)
 	}
 
-	// return database
 	return instances, nil
 }
 
-// PosgresSQL implements contract.DatabaseContract
-func (i *databaseImplementation) PosgresSQL() ([]contract.PGInstance, error) {
+// PostgresSQL implements contract.DatabaseContract
+func (i *databaseImplementation) PostgresSQL() ([]contract.PGInstance, error) {
 	c := i.Config.PostgreSQL
 	instances := []contract.PGInstance{}
 
@@ -87,5 +110,5 @@ func (i *databaseImplementation) PosgresSQL() ([]contract.PGInstance, error) {
 }
 
 func Database(Config *config.Configuration) contract.DatabaseContract {
-	return &databaseImplementation{Config}
+	return &databaseImplementation{Config: Config}
 }

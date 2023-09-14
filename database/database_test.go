@@ -46,10 +46,12 @@ func TestDatabase(t *testing.T) {
 			},
 		},
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
 	db := Database(&c)
 
 	t.Run("PING POSTGRES INSTANCE", func(t *testing.T) {
-		instances, err := db.PosgresSQL()
+		instances, err := db.PostgresSQL()
 		if err != nil {
 			t.Fatalf("error postgres connection : %v\n", err.Error())
 		}
@@ -70,13 +72,51 @@ func TestDatabase(t *testing.T) {
 
 		for _, v := range instances {
 			t.Run(v.Label, func(t *testing.T) {
-				ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-				defer cancel()
-
 				if err := v.Instance.Client().Ping(ctx, nil); err != nil {
 					t.Fatalf("error ping mongo connection on instance %s", v.Label)
 				}
 			})
 		}
+	})
+
+	t.Run("Get PG Instance", func(t *testing.T) {
+		instances, err := db.PostgresSQL()
+		if err != nil {
+			t.Fatalf("error postgres connection : %v\n", err.Error())
+		}
+
+		t.Run("not found", func(t *testing.T) {
+			instance, err := db.GetPosgresInstance(instances, "ads")
+			assert.Error(t, err)
+			assert.Nil(t, instance)
+		})
+
+		t.Run("found", func(t *testing.T) {
+			instance, err := db.GetPosgresInstance(instances, "General DB")
+			assert.NoError(t, err)
+			assert.NotNil(t, instance)
+			err = instance.Instance.Ping()
+			assert.NoError(t, err)
+		})
+	})
+
+	t.Run("Get Mongo Instance", func(t *testing.T) {
+		instances, err := db.MongoDB()
+		if err != nil {
+			t.Fatalf("error postgres connection : %v\n", err.Error())
+		}
+
+		t.Run("not found", func(t *testing.T) {
+			instance, err := db.GetMongoInstance(instances, "ads")
+			assert.Error(t, err)
+			assert.Nil(t, instance)
+		})
+
+		t.Run("found", func(t *testing.T) {
+			instance, err := db.GetMongoInstance(instances, "mongo-instance-1")
+			assert.NoError(t, err)
+			assert.NotNil(t, instance)
+			instance.Instance.Client().Ping(ctx, nil)
+		})
 	})
 }
