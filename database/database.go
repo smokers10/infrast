@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"sync"
 	"time"
 
 	_ "github.com/lib/pq"
@@ -43,36 +44,63 @@ func (*databaseImplementation) GetPosgresInstance(instances []contract.PGInstanc
 
 // MongoDB implements contract.DatabaseContract
 func (i *databaseImplementation) MongoDB() ([]contract.MongoDBInstance, error) {
+	var wg sync.WaitGroup
+	var mutex sync.Mutex
 	c := i.Config.MongoDB
 	instances := []contract.MongoDBInstance{}
+	errChan := make(chan error, len(c))
+	errAray := []error{}
 
 	for i := 0; i < len(c); i++ {
-		ctx, cancel := lib.InitializeContex()
-		defer cancel()
+		wg.Add(1)
 
-		// set configuration
-		option := options.Client().
-			ApplyURI(c[i].URI).
-			SetMaxPoolSize(uint64(c[i].MaxPool)).
-			SetMinPoolSize(uint64(c[i].MinPool)).
-			SetMaxConnIdleTime(time.Duration(c[i].MaxIdleConnections))
+		go func(i int) {
+			defer wg.Done()
 
-		// set up connection
-		client, err := mongo.Connect(ctx, option)
-		if err != nil {
-			return nil, err
-		}
+			ctx, cancel := lib.InitializeContex()
+			defer cancel()
 
-		// start connection
-		db := client.Database(c[i].DBName)
+			// set configuration
+			option := options.Client().
+				ApplyURI(c[i].URI).
+				SetMaxPoolSize(uint64(c[i].MaxPool)).
+				SetMinPoolSize(uint64(c[i].MinPool)).
+				SetMaxConnIdleTime(time.Duration(c[i].MaxIdleConnections))
 
-		// append db instance
-		instance := contract.MongoDBInstance{
-			Label:    c[i].Label,
-			Instance: db,
-		}
+			// set up connection
+			client, err := mongo.Connect(ctx, option)
+			if err != nil {
+				errChan <- err
+				return
+			}
 
-		instances = append(instances, instance)
+			// start connection
+			db := client.Database(c[i].DBName)
+
+			// append db instance
+			instance := contract.MongoDBInstance{
+				Label:    c[i].Label,
+				Instance: db,
+			}
+			mutex.Lock()
+			instances = append(instances, instance)
+			mutex.Unlock()
+		}(i)
+	}
+
+	// fait and close error channel
+	go func() {
+		wg.Wait()
+		close(errChan)
+	}()
+
+	// collect error to array
+	for v := range errChan {
+		errAray = append(errAray, v)
+	}
+
+	if len(errAray) != 0 {
+		return nil, errAray[0]
 	}
 
 	return instances, nil
@@ -80,30 +108,56 @@ func (i *databaseImplementation) MongoDB() ([]contract.MongoDBInstance, error) {
 
 // PostgresSQL implements contract.DatabaseContract
 func (i *databaseImplementation) PostgresSQL() ([]contract.PGInstance, error) {
+	var wg sync.WaitGroup
+	var mutex sync.Mutex
 	c := i.Config.PostgreSQL
 	instances := []contract.PGInstance{}
+	errChan := make(chan error, len(instances))
+	errArray := []error{}
 
 	for i := 0; i < len(c); i++ {
-		// Connection string
-		connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", c[i].Host, c[i].Port, c[i].User, c[i].Password, c[i].DBName)
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
 
-		// Open the database connection
-		db, err := sql.Open("postgres", connStr)
-		if err != nil {
-			return nil, err
-		}
+			// Connection string
+			connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", c[i].Host, c[i].Port, c[i].User, c[i].Password, c[i].DBName)
 
-		// Set connection pool settings
-		db.SetMaxOpenConns(c[i].MaxOpenConnections)
-		db.SetMaxIdleConns(c[i].MaxIdleConnections)
-		db.SetConnMaxLifetime(time.Duration(c[i].ConnectionMaxLifeTime))
+			// Open the database connection
+			db, err := sql.Open("postgres", connStr)
+			if err != nil {
+				errChan <- err
+			}
 
-		// appending instances
-		instance := contract.PGInstance{
-			Label:    c[i].Label,
-			Instance: db,
-		}
-		instances = append(instances, instance)
+			// Set connection pool settings
+			db.SetMaxOpenConns(c[i].MaxOpenConnections)
+			db.SetMaxIdleConns(c[i].MaxIdleConnections)
+			db.SetConnMaxLifetime(time.Duration(c[i].ConnectionMaxLifeTime))
+
+			// appending instances
+			instance := contract.PGInstance{
+				Label:    c[i].Label,
+				Instance: db,
+			}
+
+			mutex.Lock()
+			instances = append(instances, instance)
+			mutex.Unlock()
+		}(i)
+	}
+
+	go func() {
+		wg.Wait()
+		close(errChan)
+	}()
+
+	// collect errors
+	for v := range errChan {
+		errArray = append(errArray, v)
+	}
+
+	if len(errArray) != 0 {
+		return nil, errArray[0]
 	}
 
 	return instances, nil
